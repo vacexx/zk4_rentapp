@@ -114,3 +114,21 @@ def gigequipment_delete(request, eq_id):
         equipment.delete()
         return redirect('gig_detail', gig_id=gig_id)
     return render(request, 'gigs/gigequipment_confirm_delete.html', {'equipment': equipment})
+
+@login_required
+def gig_print(request, gig_id):
+    # 1. Najdeme konkrétní akci
+    gig = get_object_or_404(Gig, id=gig_id)
+    
+    # 2. Vytáhneme fáze a techniku PŘÍMO propojenou s touto akcí
+    # Tímto zajistíme, že tam nebude nic navíc
+    phases = WorkPhase.objects.filter(gig=gig).order_by('start_time')
+    equipment = GigEquipment.objects.filter(gig=gig)
+    
+    context = {
+        'gig': gig,
+        'phases': phases,
+        'equipment': equipment,
+    }
+    
+    return render(request, 'gigs/gig_print.html', context)

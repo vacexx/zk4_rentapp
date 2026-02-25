@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Faktura - {{ gig.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f0f0f0; padding: 50px 0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+        
+        .invoice-box {
+            max-width: 800px;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #eee;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+            background: #fff;
+            color: #555;
+            min-height: 297mm;
+        }
+
+        .invoice-header { border-bottom: 2px solid #333; margin-bottom: 20px; padding-bottom: 20px; }
+        .section-title { background: #f8f9fa; padding: 5px 10px; font-weight: bold; border-left: 4px solid #333; margin: 20px 0 10px 0; }
+        
+        @media print {
+            body { background: none; padding: 0; }
+            .invoice-box { box-shadow: none; border: none; max-width: 100%; width: 100%; margin: 0; padding: 0; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print text-center mb-4">
+    <button onclick="window.print()" class="btn btn-dark btn-lg px-5">💾 Uložit jako PDF / Tisknout</button>
+    <a href="{% url 'gig_detail' gig.id %}" class="btn btn-outline-secondary btn-lg ms-2">Zpět</a>
+</div>
+
+<div class="invoice-box">
+    <div class="invoice-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="fw-bold mb-0">FAKTURA / VÝKAZ</h1>
+            <p class="text-muted">Variabilní symbol: {{ gig.date|date:"Ymd" }}{{ gig.id }}</p>
+        </div>
+        <div class="text-end">
+            <h4 class="mb-0">Datum vystavení:</h4>
+            <p class="fs-5">{{ gig.date|date:"d. m. Y" }}</p>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-6">
+            <h5 class="fw-bold">Dodavatel:</h5>
+            <p class="mb-0 text-dark fs-5"><strong>Vojtěch Szrajber</strong></p>
+            <p class="mb-0">IČO: 24509272</p>
+            <p class="mb-0">szrajbervojtech@gmail.com | +420 723 783 053</p>
+        </div>
+        <div class="col-6 text-end text-sm-start ps-5 border-start">
+            <h5 class="fw-bold text-end text-sm-start">Odběratel:</h5>
+            <p class="mb-0 text-dark fs-5"><strong>{{ gig.client_name }}</strong></p>
+            <p class="mb-0">Zakázka: {{ gig.name }}</p>
+        </div>
+    </div>
+
+    <div class="section-title">ODPRACOVANÝ ČAS</div>
+    <table class="table table-sm border-bottom">
+        <thead>
+            <tr>
+                <th>Popis (fáze)</th>
+                <th class="text-center">Doba trvání</th>
+                <th class="text-end">Sazba</th>
+                <th class="text-end">Celkem</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for phase in phases %}
+            <tr>
+                <td>{{ phase.get_phase_display }} ({{ phase.start_time|date:"H:i" }} - {{ phase.end_time|date:"H:i" }})</td>
+                <td class="text-center">{{ phase.get_duration_hours|floatformat:1 }} h</td>
+                <td class="text-end">{{ phase.hourly_rate }} Kč/h</td>
+                <td class="text-end">{{ phase.get_price|floatformat:0 }} Kč</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">PRONAJATÁ TECHNIKA</div>
+    <table class="table table-sm border-bottom">
+        <thead>
+            <tr>
+                <th>Položka</th>
+                <th class="text-center">Množství</th>
+                <th class="text-end">Cena/ks</th>
+                <th class="text-end">Celkem</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for eq in equipment %}
+            <tr>
+                <td>{{ eq.equipment.name }}</td>
+                <td class="text-center">{{ eq.quantity }} ks</td>
+                <td class="text-end">{{ eq.agreed_price|floatformat:0 }} Kč</td>
+                <td class="text-end">{{ eq.get_total_price|floatformat:0 }} Kč</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="row mt-5">
+        <div class="col-6">
+            <p class="small text-muted">Faktura slouží zároveň jako dodací list a potvrzení o vykonané práci.</p>
+        </div>
+        <div class="col-6 text-end">
+            <p class="mb-0 fs-5">Celkem k úhradě:</p>
+            <h1 class="fw-bold text-dark">{{ gig.get_total_price|floatformat:0 }} Kč</h1>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
