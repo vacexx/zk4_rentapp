@@ -206,3 +206,21 @@ def client_create(request):
         form = ClientForm()
     
     return render(request, 'gigs/client_create.html', {'form': form})
+
+@login_required
+def gig_update(request, gig_id):
+    """Úprava existující akce (změna stavu, data, klienta...)."""
+    gig = get_object_or_404(Gig, id=gig_id)
+    
+    if request.method == 'POST':
+        # instance=gig říká Djangu, že chceme přepsat existující záznam, ne tvořit nový
+        form = GigForm(request.POST, instance=gig)
+        if form.is_valid():
+            form.save()
+            return redirect('gig_detail', gig_id=gig.id)
+    else:
+        # Vyplní formulář aktuálními daty z databáze
+        form = GigForm(instance=gig)
+    
+    # Do šablony pošleme i proměnnou is_update, abychom mohli změnit nadpis na "Upravit akci"
+    return render(request, 'gigs/gig_form.html', {'form': form, 'gig': gig, 'is_update': True})

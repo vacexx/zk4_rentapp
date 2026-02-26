@@ -6,6 +6,7 @@ urlpatterns = [
     path('akce/<int:gig_id>/tisk/', views.gig_print, name='gig_print'),
     path('akce/nova/', views.gig_create, name='gig_create'),
     path('akce/<int:gig_id>/', views.gig_detail, name='gig_detail'),
+    path('akce/<int:gig_id>/upravit/', views.gig_update, name='gig_update'),
     path('akce/<int:gig_id>/smazat/', views.gig_delete, name='gig_delete'),
     
     # Fáze (Práce)
