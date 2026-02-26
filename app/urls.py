@@ -2,7 +2,6 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-
     path('', views.gig_list, name='gig_list'),
     path('akce/<int:gig_id>/tisk/', views.gig_print, name='gig_print'),
     path('akce/nova/', views.gig_create, name='gig_create'),
@@ -17,4 +16,7 @@ urlpatterns = [
     # Technika
     path('akce/<int:gig_id>/pridat-techniku/', views.gigequipment_create, name='gigequipment_create'),
     path('technika/<int:eq_id>/smazat/', views.gigequipment_delete, name='gigequipment_delete'),
+
+    # Klienti
+    path('klient/novy/', views.client_create, name='client_create'),
 ]

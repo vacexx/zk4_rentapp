@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Gig
-from .forms import GigForm, WorkPhaseForm, WorkPhase, GigEquipmentForm, GigEquipment
+from .forms import GigForm, WorkPhaseForm, WorkPhase, GigEquipmentForm, GigEquipment, ClientForm, Client
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 import urllib.parse
@@ -192,3 +192,17 @@ def gig_print(request, gig_id):
     }
     
     return render(request, 'gigs/gig_print.html', context)
+
+@login_required
+def client_create(request):
+    """Jednoduché přidání nového klienta."""
+    if request.method == 'POST':
+        form = ClientForm(request.POST)
+        if form.is_valid():
+            form.save()
+            # Po úspěšném uložení klienta tě hodíme rovnou na zakládání akce
+            return redirect('gig_create') 
+    else:
+        form = ClientForm()
+    
+    return render(request, 'gigs/client_create.html', {'form': form})

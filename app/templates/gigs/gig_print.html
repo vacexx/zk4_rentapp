@@ -52,7 +52,9 @@
             <h5 class="fw-bold">Dodavatel:</h5>
             <p class="mb-0 text-dark fs-5"><strong>{{ gig.author.profile.name }}</strong></p>
             <p class="mb-0">IČO: {{ gig.author.profile.ico }}</p>
-            <p class="mb-0">{{ gig.author.profile.email }} | {{ gig.author.profile.phone }}</p>
+            <p class="mb-0">Číslo účtu: {{ gig.author.profile.bank_account_alt }}</p>
+            <p class="mb-0">E-mail: {{ gig.author.profile.email }}</p>
+            <p class="mb-0">Telefon: {{ gig.author.profile.phone }}</p>
         </div>
         <div class="col-6 text-end text-sm-start ps-5 border-start">
             <h5 class="fw-bold text-end text-sm-start">Odběratel:</h5>

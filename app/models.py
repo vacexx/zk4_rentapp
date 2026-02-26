@@ -10,7 +10,8 @@ class UserProfile(models.Model):
     ico = models.CharField(max_length=20, blank=True, null=True, verbose_name="IČO")
     email = models.CharField(max_length=200, blank=True, null=True, verbose_name="E-mail")
     phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Telefon")
-    bank_account = models.CharField(max_length=50, blank=True, null=True, verbose_name="Číslo účtu")
+    bank_account = models.CharField(max_length=50, blank=True, null=True, verbose_name="IBAN")
+    bank_account_alt = models.CharField(max_length=50, blank=True, null=True, verbose_name="Číslo účtu")
     
     def __str__(self):
         return f"Profil: {self.user.username}"

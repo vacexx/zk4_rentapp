@@ -1,5 +1,5 @@
 from django import forms
-from .models import Gig, WorkPhase, GigEquipment
+from .models import Gig, WorkPhase, GigEquipment, Client
 
 class GigForm(forms.ModelForm):
     class Meta:
@@ -35,4 +35,16 @@ class GigEquipmentForm(forms.ModelForm):
         labels = {
             'equipment': 'Vybavení',
             'quantity': 'Počet dní',
+        }
+
+class ClientForm(forms.ModelForm):
+    class Meta:
+        model = Client
+        fields = ['name', 'ico', 'email', 'phone', 'notes']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Název firmy nebo jméno'}),
+            'ico': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'IČO klienta'}),
+            'email': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Telefon'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Interní poznámky...'}),
         }
