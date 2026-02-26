@@ -3,6 +3,7 @@ from .models import Gig
 from .forms import GigForm, WorkPhaseForm, WorkPhase, GigEquipmentForm, GigEquipment
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+import urllib.parse
 
 @login_required
 def gig_detail(request, gig_id):
@@ -150,6 +151,44 @@ def gig_print(request, gig_id):
         'gig': gig,
         'phases': phases,
         'equipment': equipment,
+    }
+    
+    return render(request, 'gigs/gig_print.html', context)
+
+@login_required
+def gig_print(request, gig_id):
+    gig = get_object_or_404(Gig, id=gig_id)
+    
+    phases = WorkPhase.objects.filter(gig=gig).order_by('start_time')
+    equipment = GigEquipment.objects.filter(gig=gig)
+    
+    # 1. PŘÍPRAVA QR PLATBY
+    qr_url = None
+    # Zkontrolujeme, jestli má autor vyplněný profil a v něm číslo účtu
+    if gig.author and hasattr(gig.author, 'profile') and gig.author.profile.bank_account:
+        # Bankovní aplikace vyžadují IBAN (ideálně bez mezer)
+        iban = gig.author.profile.bank_account.replace(" ", "")
+        
+        # Částka musí mít přesně dvě desetinná místa (např. 1500.00)
+        amount = f"{gig.get_total_price():.2f}"
+        
+        # Variabilní symbol, který jsme vymysleli (Datum + ID akce)
+        vs = f"{gig.date.strftime('%Y%m%d')}{gig.id}"
+        
+        # Oficiální formát řetězce pro českou QR platbu
+        spd_string = f"SPD*1.0*ACC:{iban}*AM:{amount}*CC:CZK*X-VS:{vs}"
+        
+        # Převedeme text tak, aby se dal bezpečně poslat v URL adrese
+        safe_spd = urllib.parse.quote(spd_string)
+        
+        # Použijeme spolehlivou službu na vygenerování obrázku QR kódu
+        qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={safe_spd}"
+
+    context = {
+        'gig': gig,
+        'phases': phases,
+        'equipment': equipment,
+        'qr_url': qr_url, # Pošleme URL adresu obrázku do šablony
     }
     
     return render(request, 'gigs/gig_print.html', context)

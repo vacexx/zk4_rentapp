@@ -123,6 +123,16 @@
         <div class="col-6 text-end">
             <p class="mb-0 fs-5">Celkem k úhradě:</p>
             <h1 class="fw-bold text-dark">{{ gig.get_total_price|floatformat:0 }} Kč</h1>
+    
+        {% if qr_url %}
+            <div class="d-flex justify-content-end mt-4">
+                <div class="text-center">
+                    <img src="{{ qr_url }}" alt="QR Platba" class="border p-1" style="width: 130px; height: 130px;">
+                    <p class="small text-muted mt-1 mb-0 fw-bold">QR Platba</p>
+                </div>
+            </div>
+         {% endif %}
+
         </div>
     </div>
 </div>
