@@ -4,11 +4,12 @@ from .models import Gig, WorkPhase, GigEquipment
 class GigForm(forms.ModelForm):
     class Meta:
         model = Gig
-        fields = ['name', 'date', 'client_name', 'notes']
+        fields = ['name', 'date', 'client', 'status', 'notes']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'client_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'client': forms.Select(attrs={'class': 'form-select'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 

@@ -39,7 +39,7 @@
     <div class="invoice-header d-flex justify-content-between align-items-center">
         <div>
             <h1 class="fw-bold mb-0">FAKTURA / VÝKAZ</h1>
-            <p class="text-muted">Variabilní symbol: {{ gig.date|date:"Ymd" }}{{ gig.id }}</p>
+            <p class="text-muted">Variabilní symbol: {{ gig.date|date:"Ymd" }}{{ gig.id }} | Zakázka: {{ gig.name }}</p>
         </div>
         <div class="text-end">
             <h4 class="mb-0">Datum vystavení:</h4>
@@ -56,8 +56,19 @@
         </div>
         <div class="col-6 text-end text-sm-start ps-5 border-start">
             <h5 class="fw-bold text-end text-sm-start">Odběratel:</h5>
-            <p class="mb-0 text-dark fs-5"><strong>{{ gig.client_name }}</strong></p>
-            <p class="mb-0">Zakázka: {{ gig.name }}</p>
+            <p class="mb-0 text-dark fs-5"><strong>{{ gig.client.name }}</strong></p>
+            
+            {% if gig.client.ico %}
+                <p class="mb-0">IČO: {{ gig.client.ico }}</p>
+            {% endif %}
+            
+            {% if gig.client.email or gig.client.phone %}
+                <p class="mb-0">
+                    {% if gig.client.email %}{{ gig.client.email }}{% endif %}
+                    {% if gig.client.email and gig.client.phone %} | {% endif %}
+                    {% if gig.client.phone %}{{ gig.client.phone }}{% endif %}
+                </p>
+            {% endif %}
         </div>
     </div>
 

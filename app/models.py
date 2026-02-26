@@ -2,16 +2,35 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User
 
+class Client(models.Model):
+    name = models.CharField(max_length=200, verbose_name="Název / Jméno")
+    ico = models.CharField(max_length=20, blank=True, null=True, verbose_name="IČO")
+    email = models.CharField(max_length=200, blank=True, null=True, verbose_name="E-mail")
+    phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Telefon")
+    notes = models.TextField(blank=True, verbose_name="Poznámka ke klientovi")
+
+    def __str__(self):
+        return self.name
+
 class Gig(models.Model):
-    """Hlavní model pro konkrétní akci / zakázku."""
+# MOŽNOSTI PRO STATUS
+    STATUS_CHOICES = [
+        ('planned', 'V plánu'),
+        ('ongoing', 'Probíhá'),
+        ('done', 'Hotovo'),
+    ]
+
     name = models.CharField(max_length=200, verbose_name="Název akce")
     date = models.DateField(verbose_name="Datum konání")
-    client_name = models.CharField(max_length=200, verbose_name="Klient")
-    notes = models.TextField(blank=True, verbose_name="Poznámky")
     
+    # NOVÉ VAZBY MÍSTO client_name
+    client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, verbose_name="Klient")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='planned', verbose_name="Stav")
+    
+    notes = models.TextField(blank=True, verbose_name="Poznámky")
     author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Autor")
     created_at = models.DateTimeField(auto_now_add=True)
-
+    
     def __str__(self):
         return f"{self.date} - {self.name}"
 

@@ -25,6 +25,36 @@
         </a>
     </div>
 
+    <div class="card shadow-sm border-0 rounded-4 mb-4 bg-white">
+    <div class="card-body p-3">
+        <form method="GET" class="row g-2 align-items-center">
+            <div class="col-md-auto">
+                <i class="bi bi-funnel-fill text-secondary me-2"></i><strong>Filtrovat:</strong>
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select form-select-sm rounded-pill">
+                    <option value="">Všechny stavy</option>
+                    <option value="planned" {% if current_status == 'planned' %}selected{% endif %}>V plánu</option>
+                    <option value="ongoing" {% if current_status == 'ongoing' %}selected{% endif %}>Probíhá</option>
+                    <option value="done" {% if current_status == 'done' %}selected{% endif %}>Hotovo</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="author" class="form-select form-select-sm rounded-pill">
+                    <option value="">Všichni autoři</option>
+                    {% for u in users %}
+                    <option value="{{ u.id }}" {% if current_author == u.id|stringformat:"s" %}selected{% endif %}>{{ u.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-auto">
+                <button type="submit" class="btn btn-dark btn-sm rounded-pill px-3">Použít</button>
+                <a href="{% url 'gig_list' %}" class="btn btn-light btn-sm rounded-pill px-3">Zrušit</a>
+            </div>
+        </form>
+    </div>
+</div>
+
     <div class="row g-4">
         {% for gig in gigs %}
         <div class="col-md-6 col-lg-4">
@@ -34,11 +64,19 @@
                         <h5 class="card-title fw-bold mb-0">
                             <a href="{% url 'gig_detail' gig.id %}" class="text-decoration-none text-dark">{{ gig.name }}</a>
                         </h5>
-                        <span class="badge bg-primary text-white rounded-pill ms-2">{{ gig.date|date:"d. m. Y" }}</span>
-                    </div>
+                        
+                        {% if gig.status == 'planned' %}
+                            <span class="badge bg-secondary rounded-pill">V plánu</span>
+                        {% elif gig.status == 'ongoing' %}
+                            <span class="badge bg-warning text-dark rounded-pill">Probíhá</span>
+                        {% else %}
+                            <span class="badge bg-success rounded-pill">Hotovo</span>
+                        {% endif %}
+                    </div>          
+                    <div class="mb-1"><i class="bi bi-briefcase-fill me-2 text-secondary"></i>{{ gig.client.name|default:"Bez klienta" }}</div>
                     
                     <div class="text-muted small mb-3">
-                        <div class="mb-1"><i class="bi bi-briefcase-fill me-2 text-secondary"></i>{{ gig.client_name }}</div>
+                        <div><i class="bi bi-calendar-event me-2 text-secondary"></i>{{ gig.date|date:"d. m. Y" }}</div>
                         <div><i class="bi bi-person-circle me-2 text-secondary"></i>{{ gig.author.username|default:"Neznámý autor" }}</div>
                     </div>
 

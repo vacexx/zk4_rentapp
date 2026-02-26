@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import Gig
 from .forms import GigForm, WorkPhaseForm, WorkPhase, GigEquipmentForm, GigEquipment
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 
 @login_required
 def gig_detail(request, gig_id):
@@ -18,9 +19,29 @@ def gig_detail(request, gig_id):
 
 @login_required
 def gig_list(request):
-    """Výpis všech akcí seřazených od nejnovější."""
+    """Výpis akcí s možností filtrování podle statusu a autora."""
+    # Začneme se všemi akcemi (případně tu nech .filter(author=request.user), 
+    # pokud nechceš, aby tví kolegové viděli tvoje akce a naopak)
     gigs = Gig.objects.all().order_by('-date')
-    return render(request, 'gigs/gig_list.html', {'gigs': gigs})
+
+    # Přečteme si filtry z URL
+    status_filter = request.GET.get('status')
+    author_filter = request.GET.get('author')
+
+    # Aplikujeme filtry, pokud byly zadány
+    if status_filter:
+        gigs = gigs.filter(status=status_filter)
+    
+    if author_filter:
+        gigs = gigs.filter(author__id=author_filter)
+
+    context = {
+        'gigs': gigs,
+        'users': User.objects.all(), # Potřebujeme pro výběr autora ve filtru
+        'current_status': status_filter,
+        'current_author': author_filter,
+    }
+    return render(request, 'gigs/gig_list.html', context)
 
 @login_required
 def gig_create(request):
