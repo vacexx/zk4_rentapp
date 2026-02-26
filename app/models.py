@@ -2,6 +2,19 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User
 
+class UserProfile(models.Model):
+    # Propojení s výchozím uživatelem Djanga 1:1
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile', verbose_name="Uživatel")
+    
+    name = models.CharField(max_length=50, blank=True, verbose_name="Jméno a příjmení")
+    ico = models.CharField(max_length=20, blank=True, null=True, verbose_name="IČO")
+    email = models.CharField(max_length=200, blank=True, null=True, verbose_name="E-mail")
+    phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Telefon")
+    bank_account = models.CharField(max_length=50, blank=True, null=True, verbose_name="Číslo účtu")
+    
+    def __str__(self):
+        return f"Profil: {self.user.username}"
+
 class Client(models.Model):
     name = models.CharField(max_length=200, verbose_name="Název / Jméno")
     ico = models.CharField(max_length=20, blank=True, null=True, verbose_name="IČO")
