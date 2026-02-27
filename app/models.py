@@ -7,6 +7,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile', verbose_name="Uživatel")
     
     name = models.CharField(max_length=50, blank=True, verbose_name="Jméno a příjmení")
+    address = models.CharField(max_length=200, blank=True, verbose_name="Adresa")
     ico = models.CharField(max_length=20, blank=True, null=True, verbose_name="IČO")
     email = models.CharField(max_length=200, blank=True, null=True, verbose_name="E-mail")
     phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Telefon")
@@ -18,6 +19,7 @@ class UserProfile(models.Model):
 
 class Client(models.Model):
     name = models.CharField(max_length=200, verbose_name="Název / Jméno")
+    address = models.CharField(max_length=200, blank=True, verbose_name="Adresa")
     ico = models.CharField(max_length=20, blank=True, null=True, verbose_name="IČO")
     email = models.CharField(max_length=200, blank=True, null=True, verbose_name="E-mail")
     phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Telefon")

@@ -29,6 +29,7 @@
     </style>
 </head>
 <body>
+{% load date_extras %}
 
 <div class="no-print text-center mb-4">
     <button onclick="window.print()" class="btn btn-dark btn-lg px-5">💾 Uložit jako PDF / Tisknout</button>
@@ -39,11 +40,14 @@
     <div class="invoice-header d-flex justify-content-between align-items-center">
         <div>
             <h1 class="fw-bold mb-0">FAKTURA / VÝKAZ</h1>
-            <p class="text-muted">Variabilní symbol: {{ gig.date|date:"Ymd" }}{{ gig.id }} | Zakázka: {{ gig.name }}</p>
+            <p class="text-muted mb-0">Variabilní symbol: {{ gig.date|date:"Ymd" }}{{ gig.id }} | Zakázka: {{ gig.name }}</p>
+            <p class="text-muted">Datum provedení zakázky: {{ gig.date|date:"d. m. Y" }}</p>
         </div>
         <div class="text-end">
-            <h4 class="mb-0">Datum vystavení:</h4>
-            <p class="fs-5">{{ gig.date|date:"d. m. Y" }}</p>
+            <h6 class="mb-0">Datum vystavení:</h6>
+            <p>{{ today|date:"d. m. Y" }}</p>
+            <h6 class="mb-0">Datum splatnosti:</h6>
+            <p>{{ today|add_days:14|date:"d. m. Y" }}</p>
         </div>
     </div>
 
@@ -51,6 +55,7 @@
         <div class="col-6">
             <h5 class="fw-bold">Dodavatel:</h5>
             <p class="mb-0 text-dark fs-5"><strong>{{ gig.author.profile.name }}</strong></p>
+            <p class="mb-0">{{ gig.author.profile.address }}</p>
             <p class="mb-0">IČO: {{ gig.author.profile.ico }}</p>
             <p class="mb-0">Číslo účtu: {{ gig.author.profile.bank_account_alt }}</p>
             <p class="mb-0">E-mail: {{ gig.author.profile.email }}</p>
@@ -59,6 +64,7 @@
         <div class="col-6 text-end text-sm-start ps-5 border-start">
             <h5 class="fw-bold text-end text-sm-start">Odběratel:</h5>
             <p class="mb-0 text-dark fs-5"><strong>{{ gig.client.name }}</strong></p>
+            <p class="mb-0">{{ gig.client.address }}</p>
             
             {% if gig.client.ico %}
                 <p class="mb-0">IČO: {{ gig.client.ico }}</p>
@@ -74,6 +80,7 @@
         </div>
     </div>
 
+    {% if phases %}
     <div class="section-title">ODPRACOVANÝ ČAS</div>
     <table class="table table-sm border-bottom">
         <thead>
@@ -95,7 +102,9 @@
             {% endfor %}
         </tbody>
     </table>
+    {% endif %}
 
+    {% if equipment %}
     <div class="section-title">PRONAJATÁ TECHNIKA</div>
     <table class="table table-sm border-bottom">
         <thead>
@@ -117,10 +126,12 @@
             {% endfor %}
         </tbody>
     </table>
+    {% endif %}
 
     <div class="row mt-5">
         <div class="col-6">
-            <p class="small text-muted">Faktura slouží zároveň jako dodací list a potvrzení o vykonané práci.</p>
+            <p class="small text-muted mb-1">Faktura slouží zároveň jako dodací list a potvrzení o vykonané práci. Nejsem plátcem DPH.</p>
+            <p class="small text-muted"><em>Fyzická osoba zapsaná v živnostenském rejstříku u Magistrátu města Opavy.</em></p>
         </div>
         <div class="col-6 text-end">
             <p class="mb-0 fs-5">Celkem k úhradě:</p>
