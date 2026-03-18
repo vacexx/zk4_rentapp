@@ -7,10 +7,8 @@ import urllib.parse
 
 @login_required
 def gig_detail(request, gig_id):
-    # Najde akci podle ID, nebo vyhodí chybu 404, pokud neexistuje
     gig = get_object_or_404(Gig, id=gig_id)
     
-    # Připravíme si data pro šablonu
     context = {
         'gig': gig,
         'phases': gig.work_phases.all(),
@@ -21,15 +19,11 @@ def gig_detail(request, gig_id):
 @login_required
 def gig_list(request):
     """Výpis akcí s možností filtrování podle statusu a autora."""
-    # Začneme se všemi akcemi (případně tu nech .filter(author=request.user), 
-    # pokud nechceš, aby tví kolegové viděli tvoje akce a naopak)
     gigs = Gig.objects.all().order_by('-date')
 
-    # Přečteme si filtry z URL
     status_filter = request.GET.get('status')
     author_filter = request.GET.get('author')
 
-    # Aplikujeme filtry, pokud byly zadány
     if status_filter:
         gigs = gigs.filter(status=status_filter)
     
@@ -38,7 +32,7 @@ def gig_list(request):
 
     context = {
         'gigs': gigs,
-        'users': User.objects.all(), # Potřebujeme pro výběr autora ve filtru
+        'users': User.objects.all(),
         'current_status': status_filter,
         'current_author': author_filter,
     }
@@ -50,10 +44,10 @@ def gig_create(request):
     if request.method == 'POST':
         form = GigForm(request.POST)
         if form.is_valid():
-            gig = form.save(commit=False) # Zastavíme ukládání
+            gig = form.save(commit=False)
             if request.user.is_authenticated:
-                gig.author = request.user # Přiřadíme přihlášeného uživatele jako autora
-            gig.save()                    # Nyní uložíme
+                gig.author = request.user 
+            gig.save()                  
             return redirect('gig_detail', gig_id=gig.id)
     else:
         form = GigForm()
@@ -75,9 +69,9 @@ def workphase_create(request, gig_id):
     if request.method == 'POST':
         form = WorkPhaseForm(request.POST)
         if form.is_valid():
-            phase = form.save(commit=False) # Zatím neukládat do DB
-            phase.gig = gig # Propojení s konkrétní akcí
-            phase.save() # Teď uložit
+            phase = form.save(commit=False)
+            phase.gig = gig
+            phase.save()
             return redirect('gig_detail', gig_id=gig.id)
     else:
         form = WorkPhaseForm()
@@ -88,7 +82,6 @@ def workphase_update(request, phase_id):
     """Úprava existující fáze."""
     phase = get_object_or_404(WorkPhase, id=phase_id)
     if request.method == 'POST':
-        # "instance=phase" říká Djangu, že neukládáme novou fázi, ale přepisujeme starou
         form = WorkPhaseForm(request.POST, instance=phase)
         if form.is_valid():
             form.save()
@@ -114,14 +107,9 @@ def gigequipment_create(request, gig_id):
     if request.method == 'POST':
         form = GigEquipmentForm(request.POST)
         if form.is_valid():
-            eq = form.save(commit=False) # Zastavíme ukládání
-            eq.gig = gig                 # Propojíme s akcí
-            
-            # MAGICKÝ ŘÁDEK ZDE:
-            # Vezmeme výchozí cenu z katalogu a uložíme ji jako sjednanou cenu
+            eq = form.save(commit=False)
             eq.agreed_price = eq.equipment.default_price 
-            
-            eq.save()                    # Nyní finálně uložíme do databáze
+            eq.save()   
             return redirect('gig_detail', gig_id=gig.id)
     else:
         form = GigEquipmentForm()
@@ -139,11 +127,7 @@ def gigequipment_delete(request, eq_id):
 
 @login_required
 def gig_print(request, gig_id):
-    # 1. Najdeme konkrétní akci
     gig = get_object_or_404(Gig, id=gig_id)
-    
-    # 2. Vytáhneme fáze a techniku PŘÍMO propojenou s touto akcí
-    # Tímto zajistíme, že tam nebude nic navíc
     phases = WorkPhase.objects.filter(gig=gig).order_by('start_time')
     equipment = GigEquipment.objects.filter(gig=gig)
     
@@ -161,34 +145,21 @@ def gig_print(request, gig_id):
     
     phases = WorkPhase.objects.filter(gig=gig).order_by('start_time')
     equipment = GigEquipment.objects.filter(gig=gig)
-    
-    # 1. PŘÍPRAVA QR PLATBY
+
     qr_url = None
-    # Zkontrolujeme, jestli má autor vyplněný profil a v něm číslo účtu
     if gig.author and hasattr(gig.author, 'profile') and gig.author.profile.bank_account:
-        # Bankovní aplikace vyžadují IBAN (ideálně bez mezer)
         iban = gig.author.profile.bank_account.replace(" ", "")
-        
-        # Částka musí mít přesně dvě desetinná místa (např. 1500.00)
         amount = f"{gig.get_total_price():.2f}"
-        
-        # Variabilní symbol, který jsme vymysleli (Datum + ID akce)
         vs = f"{gig.date.strftime('%Y%m%d')}{gig.id}"
-        
-        # Oficiální formát řetězce pro českou QR platbu
         spd_string = f"SPD*1.0*ACC:{iban}*AM:{amount}*CC:CZK*X-VS:{vs}"
-        
-        # Převedeme text tak, aby se dal bezpečně poslat v URL adrese
         safe_spd = urllib.parse.quote(spd_string)
-        
-        # Použijeme spolehlivou službu na vygenerování obrázku QR kódu
         qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={safe_spd}"
 
     context = {
         'gig': gig,
         'phases': phases,
         'equipment': equipment,
-        'qr_url': qr_url, # Pošleme URL adresu obrázku do šablony
+        'qr_url': qr_url,
     }
     
     return render(request, 'gigs/gig_print.html', context)
@@ -200,7 +171,6 @@ def client_create(request):
         form = ClientForm(request.POST)
         if form.is_valid():
             form.save()
-            # Po úspěšném uložení klienta tě hodíme rovnou na zakládání akce
             return redirect('gig_create') 
     else:
         form = ClientForm()
@@ -213,14 +183,11 @@ def gig_update(request, gig_id):
     gig = get_object_or_404(Gig, id=gig_id)
     
     if request.method == 'POST':
-        # instance=gig říká Djangu, že chceme přepsat existující záznam, ne tvořit nový
         form = GigForm(request.POST, instance=gig)
         if form.is_valid():
             form.save()
             return redirect('gig_detail', gig_id=gig.id)
     else:
-        # Vyplní formulář aktuálními daty z databáze
         form = GigForm(instance=gig)
-    
-    # Do šablony pošleme i proměnnou is_update, abychom mohli změnit nadpis na "Upravit akci"
+
     return render(request, 'gigs/gig_form.html', {'form': form, 'gig': gig, 'is_update': True})

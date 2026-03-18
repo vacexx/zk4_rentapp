@@ -3,7 +3,6 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User
 
 class UserProfile(models.Model):
-    # Propojení s výchozím uživatelem Djanga 1:1
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile', verbose_name="Uživatel")
     
     name = models.CharField(max_length=50, blank=True, verbose_name="Jméno a příjmení")
@@ -29,7 +28,6 @@ class Client(models.Model):
         return self.name
 
 class Gig(models.Model):
-# MOŽNOSTI PRO STATUS
     STATUS_CHOICES = [
         ('planned', 'V plánu'),
         ('ongoing', 'Probíhá'),
@@ -39,7 +37,6 @@ class Gig(models.Model):
     name = models.CharField(max_length=200, verbose_name="Název akce")
     date = models.DateField(verbose_name="Datum konání")
     
-    # NOVÉ VAZBY MÍSTO client_name
     client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, verbose_name="Klient")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='planned', verbose_name="Stav")
     
@@ -51,15 +48,12 @@ class Gig(models.Model):
         return f"{self.date} - {self.name}"
 
     def get_total_work_price(self):
-        """Sečte peníze za všechny odpracované fáze."""
         return sum(phase.get_price() for phase in self.work_phases.all())
 
     def get_total_equipment_price(self):
-        """Sečte peníze za veškerou pronajatou techniku."""
         return sum(eq.get_total_price() for eq in self.equipment_used.all())
 
     def get_total_price(self):
-        """Finální částka pro fakturu (Práce + Technika)."""
         return self.get_total_work_price() + self.get_total_equipment_price()
 
 
@@ -95,19 +89,16 @@ class WorkPhase(models.Model):
     )
 
     def get_duration_hours(self):
-        """Spočítá délku trvání v hodinách."""
         duration = self.end_time - self.start_time
         return duration.total_seconds() / 3600
 
     def get_price(self):
-        """Vynásobí hodiny sazbou."""
         from decimal import Decimal
         hours = Decimal(str(self.get_duration_hours()))
         return hours * Decimal(self.hourly_rate)
 
 
 class Equipment(models.Model):
-    """Tvůj inventář - katalog věcí, které můžeš pronajímat."""
     name = models.CharField(max_length=150, verbose_name="Název vybavení (např. X32)")
     default_price = models.DecimalField(max_digits=8, decimal_places=2, verbose_name="Výchozí cena za akci")
     
@@ -116,14 +107,10 @@ class Equipment(models.Model):
 
 
 class GigEquipment(models.Model):
-    """Spojovací tabulka: jaká technika jela na jakou akci."""
+    """Mezivazební tabulka: jaká technika jela na jakou akci."""
     gig = models.ForeignKey(Gig, on_delete=models.CASCADE, related_name='equipment_used')
     equipment = models.ForeignKey(Equipment, on_delete=models.PROTECT)
-    
     quantity = models.PositiveIntegerField(default=1, verbose_name="Počet kusů")
-    
-    # Cenu kopírujeme z default_price při vytvoření, ale necháváme ji editovatelnou.
-    # Někdy dáš klientovi slevu, jindy zdražíš, tak ať ti to nerozhodí minulé faktury.
     agreed_price = models.DecimalField(max_digits=8, decimal_places=2, verbose_name="Sjednaná cena za kus")
 
     def get_total_price(self):
