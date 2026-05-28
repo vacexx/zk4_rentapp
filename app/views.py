@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Gig
-from .forms import GigForm, WorkPhaseForm, WorkPhase, GigEquipmentForm, GigEquipment, ClientForm, Client
+from .models import Gig, CustomInvoiceItem
+from .forms import GigForm, WorkPhaseForm, WorkPhase, GigEquipmentForm, GigEquipment, ClientForm, Client, CustomInvoiceItemForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 import urllib.parse
@@ -13,6 +13,7 @@ def gig_detail(request, gig_id):
         'gig': gig,
         'phases': gig.work_phases.all(),
         'equipment': gig.equipment_used.all(),
+        'custom_items': gig.custom_items.all(),
     }
     return render(request, 'gigs/gig_detail.html', context)
 
@@ -128,23 +129,10 @@ def gigequipment_delete(request, eq_id):
 @login_required
 def gig_print(request, gig_id):
     gig = get_object_or_404(Gig, id=gig_id)
-    phases = WorkPhase.objects.filter(gig=gig).order_by('start_time')
-    equipment = GigEquipment.objects.filter(gig=gig)
-    
-    context = {
-        'gig': gig,
-        'phases': phases,
-        'equipment': equipment,
-    }
-    
-    return render(request, 'gigs/gig_print.html', context)
-
-@login_required
-def gig_print(request, gig_id):
-    gig = get_object_or_404(Gig, id=gig_id)
     
     phases = WorkPhase.objects.filter(gig=gig).order_by('start_time')
     equipment = GigEquipment.objects.filter(gig=gig)
+    custom_items = CustomInvoiceItem.objects.filter(gig=gig)
 
     qr_url = None
     if gig.author and hasattr(gig.author, 'profile') and gig.author.profile.bank_account:
@@ -159,6 +147,34 @@ def gig_print(request, gig_id):
         'gig': gig,
         'phases': phases,
         'equipment': equipment,
+        'custom_items': custom_items,
+        'qr_url': qr_url,
+    }
+    
+    return render(request, 'gigs/gig_print.html', context)
+
+@login_required
+def gig_print(request, gig_id):
+    gig = get_object_or_404(Gig, id=gig_id)
+    
+    phases = WorkPhase.objects.filter(gig=gig).order_by('start_time')
+    equipment = GigEquipment.objects.filter(gig=gig)
+    custom_items = CustomInvoiceItem.objects.filter(gig=gig)
+
+    qr_url = None
+    if gig.author and hasattr(gig.author, 'profile') and gig.author.profile.bank_account:
+        iban = gig.author.profile.bank_account.replace(" ", "")
+        amount = f"{gig.get_total_price():.2f}"
+        vs = f"{gig.date.strftime('%Y%m%d')}{gig.id}"
+        spd_string = f"SPD*1.0*ACC:{iban}*AM:{amount}*CC:CZK*X-VS:{vs}"
+        safe_spd = urllib.parse.quote(spd_string)
+        qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={safe_spd}"
+
+    context = {
+        'gig': gig,
+        'phases': phases,
+        'equipment': equipment,
+        'custom_items': custom_items,
         'qr_url': qr_url,
     }
     
@@ -191,3 +207,41 @@ def gig_update(request, gig_id):
         form = GigForm(instance=gig)
 
     return render(request, 'gigs/gig_form.html', {'form': form, 'gig': gig, 'is_update': True})
+
+@login_required
+def custom_invoice_item_create(request, gig_id):
+    """Přidání vlastní položky na fakturu."""
+    gig = get_object_or_404(Gig, id=gig_id)
+    if request.method == 'POST':
+        form = CustomInvoiceItemForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.gig = gig
+            item.save()
+            return redirect('gig_detail', gig_id=gig.id)
+    else:
+        form = CustomInvoiceItemForm()
+    return render(request, 'gigs/custominvoiceitem_form.html', {'form': form, 'gig': gig})
+
+@login_required
+def custom_invoice_item_update(request, item_id):
+    """Úprava vlastní položky na faktuře."""
+    item = get_object_or_404(CustomInvoiceItem, id=item_id)
+    if request.method == 'POST':
+        form = CustomInvoiceItemForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            return redirect('gig_detail', gig_id=item.gig.id)
+    else:
+        form = CustomInvoiceItemForm(instance=item)
+    return render(request, 'gigs/custominvoiceitem_form.html', {'form': form, 'gig': item.gig, 'item': item, 'is_update': True})
+
+@login_required
+def custom_invoice_item_delete(request, item_id):
+    """Smazání vlastní položky z faktury."""
+    item = get_object_or_404(CustomInvoiceItem, id=item_id)
+    gig_id = item.gig.id
+    if request.method == 'POST':
+        item.delete()
+        return redirect('gig_detail', gig_id=gig_id)
+    return render(request, 'gigs/custominvoiceitem_confirm_delete.html', {'item': item})

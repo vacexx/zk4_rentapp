@@ -18,6 +18,11 @@ urlpatterns = [
     path('akce/<int:gig_id>/pridat-techniku/', views.gigequipment_create, name='gigequipment_create'),
     path('technika/<int:eq_id>/smazat/', views.gigequipment_delete, name='gigequipment_delete'),
 
+    # Vlastní položky na faktuře
+    path('akce/<int:gig_id>/pridat-polozku/', views.custom_invoice_item_create, name='custom_invoice_item_create'),
+    path('polozka/<int:item_id>/upravit/', views.custom_invoice_item_update, name='custom_invoice_item_update'),
+    path('polozka/<int:item_id>/smazat/', views.custom_invoice_item_delete, name='custom_invoice_item_delete'),
+
     # Klienti
     path('klient/novy/', views.client_create, name='client_create'),
 ]

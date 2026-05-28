@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if is_update %}Upravit položku{% else %}Přidat položku{% endif %} | ZK4 Production{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-4">
+            <h2 class="fw-bold mb-4">{% if is_update %}Upravit vlastní položku{% else %}Přidat vlastní položku na fakturu{% endif %}</h2>
+            <h5 class="text-muted mb-4">Akce: {{ gig.name }}</h5>
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Typ položky -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Typ položky</label>
+                    <div class="form-check">
+                        <input class="form-check-input item-type-radio" type="radio" name="item_type" id="id_item_type_fixed" value="fixed" {% if not form.instance.id or form.instance.item_type == 'fixed' %}checked{% endif %}>
+                        <label class="form-check-label" for="id_item_type_fixed">
+                            Fixní cena (např. cesta, palivo, pronájem)
+                        </label>
+                    </div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input item-type-radio" type="radio" name="item_type" id="id_item_type_hourly" value="hourly" {% if form.instance.id and form.instance.item_type == 'hourly' %}checked{% endif %}>
+                        <label class="form-check-label" for="id_item_type_hourly">
+                            Hodinová sazba (např. čas strávený na cestě)
+                        </label>
+                    </div>
+                    {{ form.item_type.errors }}
+                </div>
+
+                <!-- Popis -->
+                <div class="mb-3">
+                    {{ form.description.label_tag }}
+                    {{ form.description }}
+                    {{ form.description.errors }}
+                </div>
+
+                <!-- Fixní cena (zobrazí se pouze pro typ "fixed") -->
+                <div id="fixed-price-section" class="mb-3" style="display: none;">
+                    {{ form.fixed_price.label_tag }}
+                    <div class="input-group">
+                        {{ form.fixed_price }}
+                        <span class="input-group-text">Kč</span>
+                    </div>
+                    {{ form.fixed_price.errors }}
+                </div>
+
+                <!-- Hodinová sazba (zobrazí se pouze pro typ "hourly") -->
+                <div id="hourly-rate-section" style="display: none;">
+                    <div class="mb-3">
+                        {{ form.quantity.label_tag }}
+                        <div class="input-group">
+                            {{ form.quantity }}
+                            <span class="input-group-text">h</span>
+                        </div>
+                        {{ form.quantity.errors }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.unit_price.label_tag }}
+                        <div class="input-group">
+                            {{ form.unit_price }}
+                            <span class="input-group-text">Kč/h</span>
+                        </div>
+                        {{ form.unit_price.errors }}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4 pt-3 border-top text-end">
+                    <a href="{% url 'gig_detail' gig.id %}" class="btn btn-outline-secondary rounded-pill px-4">Zrušit</a>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">{% if is_update %}Uložit změny{% else %}Přidat položku{% endif %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fixedPriceSection = document.getElementById('fixed-price-section');
+    const hourlyRateSection = document.getElementById('hourly-rate-section');
+    const radios = document.querySelectorAll('.item-type-radio');
+
+    function toggleSections() {
+        const selectedType = document.querySelector('.item-type-radio:checked').value;
+        if (selectedType === 'fixed') {
+            fixedPriceSection.style.display = 'block';
+            hourlyRateSection.style.display = 'none';
+        } else {
+            fixedPriceSection.style.display = 'none';
+            hourlyRateSection.style.display = 'block';
+        }
+    }
+
+    // Initial toggle
+    toggleSections();
+
+    // Add event listeners
+    radios.forEach(radio => {
+        radio.addEventListener('change', toggleSections);
+    });
+});
+</script>
+
+<style>
+    .input-group-text {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+

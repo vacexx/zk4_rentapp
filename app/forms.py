@@ -1,5 +1,5 @@
 from django import forms
-from .models import Gig, WorkPhase, GigEquipment, Client
+from .models import Gig, WorkPhase, GigEquipment, Client, CustomInvoiceItem
 
 class GigForm(forms.ModelForm):
     class Meta:
@@ -47,4 +47,23 @@ class ClientForm(forms.ModelForm):
             'email': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
             'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Telefon'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Interní poznámky...'}),
+        }
+
+class CustomInvoiceItemForm(forms.ModelForm):
+    class Meta:
+        model = CustomInvoiceItem
+        fields = ['item_type', 'description', 'fixed_price', 'quantity', 'unit_price']
+        widgets = {
+            'item_type': forms.RadioSelect(attrs={'class': 'form-check-input'}),
+            'description': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Popis (např. "Cesta + palivo")'}),
+            'fixed_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': '500'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0.01', 'placeholder': 'Počet hodin'}),
+            'unit_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': 'Cena za hodinu'}),
+        }
+        labels = {
+            'item_type': 'Typ položky',
+            'description': 'Popis',
+            'fixed_price': 'Cena (Kč)',
+            'quantity': 'Počet hodin',
+            'unit_price': 'Cena za hodinu (Kč/h)',
         }

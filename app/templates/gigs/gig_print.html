@@ -128,6 +128,42 @@
     </table>
     {% endif %}
 
+    {% if custom_items %}
+    <div class="section-title">OSTATNÍ POLOŽKY</div>
+    <table class="table table-sm border-bottom">
+        <thead>
+            <tr>
+                <th>Popis</th>
+                <th class="text-center">Typ</th>
+                <th class="text-end">Cena/Sazba</th>
+                <th class="text-end">Celkem</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in custom_items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td class="text-center">
+                    {% if item.item_type == 'fixed' %}
+                        Fixní
+                    {% else %}
+                        Hodinová
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    {% if item.item_type == 'fixed' %}
+                        {{ item.fixed_price|floatformat:0 }} Kč
+                    {% else %}
+                        {{ item.quantity|floatformat:1 }} h × {{ item.unit_price|floatformat:0 }} Kč/h
+                    {% endif %}
+                </td>
+                <td class="text-end">{{ item.get_total_price|floatformat:0 }} Kč</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
     <div class="row mt-5">
         <div class="col-6">
             <p class="small text-muted mb-1">Faktura slouží zároveň jako dodací list a potvrzení o vykonané práci. Nejsem plátcem DPH.</p>

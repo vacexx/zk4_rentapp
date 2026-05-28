@@ -32,6 +32,7 @@ class Gig(models.Model):
         ('planned', 'V plánu'),
         ('ongoing', 'Probíhá'),
         ('done', 'Hotovo'),
+        ('paid', 'Zaplaceno'),
     ]
 
     name = models.CharField(max_length=200, verbose_name="Název akce")
@@ -53,8 +54,11 @@ class Gig(models.Model):
     def get_total_equipment_price(self):
         return sum(eq.get_total_price() for eq in self.equipment_used.all())
 
+    def get_total_custom_items_price(self):
+        return sum(item.get_total_price() for item in self.custom_items.all())
+
     def get_total_price(self):
-        return self.get_total_work_price() + self.get_total_equipment_price()
+        return self.get_total_work_price() + self.get_total_equipment_price() + self.get_total_custom_items_price()
 
 
 class WorkPhase(models.Model):
@@ -115,3 +119,40 @@ class GigEquipment(models.Model):
 
     def get_total_price(self):
         return self.quantity * self.agreed_price
+
+
+class CustomInvoiceItem(models.Model):
+    """Vlastní položka na faktuře - umožňuje přidat další díly, služby apod."""
+    
+    ITEM_TYPE_CHOICES = [
+        ('fixed', 'Fixní cena'),
+        ('hourly', 'Hodinová sazba'),
+    ]
+
+    gig = models.ForeignKey(Gig, on_delete=models.CASCADE, related_name='custom_items')
+    item_type = models.CharField(max_length=10, choices=ITEM_TYPE_CHOICES, default='fixed', verbose_name="Typ položky")
+    description = models.CharField(max_length=250, verbose_name="Popis položky")
+    
+    # Pro fixní cenu
+    fixed_price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, verbose_name="Fixní cena (Kč)")
+    
+    # Pro hodinovou sazbu
+    quantity = models.DecimalField(max_digits=8, decimal_places=2, default=1, null=True, blank=True, verbose_name="Počet hodin")
+    unit_price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, verbose_name="Cena za hodinu (Kč/h)")
+
+    class Meta:
+        verbose_name = "Vlastní položka na faktuře"
+        verbose_name_plural = "Vlastní položky na faktuře"
+        ordering = ['id']
+
+    def __str__(self):
+        return f"{self.description} ({self.get_item_type_display()})"
+
+    def get_total_price(self):
+        if self.item_type == 'fixed':
+            return self.fixed_price or 0
+        else:  # hourly
+            from decimal import Decimal
+            qty = Decimal(str(self.quantity or 0))
+            price = Decimal(str(self.unit_price or 0))
+            return qty * price

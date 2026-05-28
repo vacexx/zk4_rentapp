@@ -28,6 +28,7 @@
                     <option value="planned" {% if current_status == 'planned' %}selected{% endif %}>V plánu</option>
                     <option value="ongoing" {% if current_status == 'ongoing' %}selected{% endif %}>Probíhá</option>
                     <option value="done" {% if current_status == 'done' %}selected{% endif %}>Hotovo</option>
+                    <option value="paid" {% if current_status == 'paid' %}selected{% endif %}>Zaplaceno</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -60,8 +61,12 @@
                             <span class="badge bg-secondary rounded-pill">V plánu</span>
                         {% elif gig.status == 'ongoing' %}
                             <span class="badge bg-warning text-dark rounded-pill">Probíhá</span>
+                        {% elif gig.status == 'done' %}
+                            <span class="badge bg-primary rounded-pill">Hotovo</span>
+                        {% elif gig.status == 'paid' %}
+                            <span class="badge bg-success rounded-pill">Zaplaceno</span>
                         {% else %}
-                            <span class="badge bg-success rounded-pill">Hotovo</span>
+                            <span class="badge bg-secondary rounded-pill">Neznámý</span>
                         {% endif %}
                     </div>          
                     <div class="mb-1"><i class="bi bi-briefcase-fill me-2 text-secondary"></i>{{ gig.client.name|default:"Bez klienta" }}</div>
