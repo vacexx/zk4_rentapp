@@ -11,9 +11,14 @@
             <h1 class="display-5 fw-bold mb-0">Moje akce</h1>
             <p class="text-muted mt-1 mb-0">Přehled všech tvých zakázek a gigů.</p>
         </div>
-        <a href="{% url 'gig_create' %}" class="btn btn-success btn-lg rounded-pill px-4 shadow-sm">
-            <i class="bi bi-plus-lg me-2"></i>Nová akce
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{% url 'financial_overview' %}" class="btn btn-info btn-lg rounded-pill px-4 shadow-sm">
+                <i class="bi bi-graph-up me-2"></i>Finanční přehled
+            </a>
+            <a href="{% url 'gig_create' %}" class="btn btn-success btn-lg rounded-pill px-4 shadow-sm">
+                <i class="bi bi-plus-lg me-2"></i>Nová akce
+            </a>
+        </div>
     </div>
 
     <div class="card shadow-sm border-0 rounded-4 mb-4 bg-white">
@@ -29,14 +34,6 @@
                     <option value="ongoing" {% if current_status == 'ongoing' %}selected{% endif %}>Probíhá</option>
                     <option value="done" {% if current_status == 'done' %}selected{% endif %}>Hotovo</option>
                     <option value="paid" {% if current_status == 'paid' %}selected{% endif %}>Zaplaceno</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select name="author" class="form-select form-select-sm rounded-pill">
-                    <option value="">Všichni autoři</option>
-                    {% for u in users %}
-                    <option value="{{ u.id }}" {% if current_author == u.id|stringformat:"s" %}selected{% endif %}>{{ u.username }}</option>
-                    {% endfor %}
                 </select>
             </div>
             <div class="col-md-auto">
@@ -73,7 +70,6 @@
                     
                     <div class="text-muted small mb-3">
                         <div><i class="bi bi-calendar-event me-2 text-secondary"></i>{{ gig.date|date:"d. m. Y" }}</div>
-                        <div><i class="bi bi-person-circle me-2 text-secondary"></i>{{ gig.author.username|default:"Neznámý autor" }}</div>
                     </div>
 
                     {% if gig.notes %}

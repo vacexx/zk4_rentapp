@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path('', views.gig_list, name='gig_list'),
+    path('prehled/', views.financial_overview, name='financial_overview'),
     path('akce/<int:gig_id>/tisk/', views.gig_print, name='gig_print'),
     path('akce/nova/', views.gig_create, name='gig_create'),
     path('akce/<int:gig_id>/', views.gig_detail, name='gig_detail'),

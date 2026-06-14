@@ -4,6 +4,9 @@ from .forms import GigForm, WorkPhaseForm, WorkPhase, GigEquipmentForm, GigEquip
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 import urllib.parse
+from datetime import datetime, timedelta
+from django.db.models import Sum, Q
+from decimal import Decimal
 
 @login_required
 def gig_detail(request, gig_id):
@@ -19,25 +22,151 @@ def gig_detail(request, gig_id):
 
 @login_required
 def gig_list(request):
-    """Výpis akcí s možností filtrování podle statusu a autora."""
-    gigs = Gig.objects.all().order_by('-date')
+    """Výpis akcí - jen ty, které vytvořil přihlášený uživatel."""
+    gigs = Gig.objects.filter(author=request.user).order_by('-date')
 
     status_filter = request.GET.get('status')
-    author_filter = request.GET.get('author')
 
     if status_filter:
         gigs = gigs.filter(status=status_filter)
-    
-    if author_filter:
-        gigs = gigs.filter(author__id=author_filter)
 
     context = {
         'gigs': gigs,
-        'users': User.objects.all(),
         'current_status': status_filter,
-        'current_author': author_filter,
     }
     return render(request, 'gigs/gig_list.html', context)
+
+@login_required
+def financial_overview(request):
+    """Finanční přehled akcí - měsíční a roční souhrny, fakturováno/nefakturováno."""
+    user_gigs = Gig.objects.filter(author=request.user)
+    
+    # Česká jména měsíců
+    czech_months = {
+        1: 'Leden', 2: 'Únor', 3: 'Březen', 4: 'Duben',
+        5: 'Květen', 6: 'Červen', 7: 'Červenec', 8: 'Srpen',
+        9: 'Září', 10: 'Říjen', 11: 'Listopad', 12: 'Prosinec'
+    }
+    
+    # Agregace dat
+    now = datetime.now()
+    current_year = now.year
+    current_month = now.month
+    
+    # Celkový přehled
+    total_price = Decimal('0')
+    invoiced_price = Decimal('0')
+    not_invoiced_price = Decimal('0')
+    
+    for gig in user_gigs:
+        total = gig.get_total_price()
+        if gig.status == 'paid':
+            invoiced_price += total
+        else:
+            not_invoiced_price += total
+    
+    total_price = invoiced_price + not_invoiced_price
+    
+    # Výpočet procenta zaplacení
+    invoiced_percentage = 0
+    if total_price > 0:
+        invoiced_percentage = (invoiced_price / total_price) * 100
+    
+    # Měsíční přehled (posledních 12 měsíců)
+    monthly_data = []
+    for i in range(11, -1, -1):
+        month_date = now - timedelta(days=30*i)
+        month_year = month_date.year
+        month_num = month_date.month
+        
+        month_gigs = user_gigs.filter(
+            date__year=month_year,
+            date__month=month_num
+        )
+        
+        month_total = Decimal('0')
+        month_invoiced = Decimal('0')
+        month_not_invoiced = Decimal('0')
+        
+        for gig in month_gigs:
+            total = gig.get_total_price()
+            month_total += total
+            if gig.status == 'paid':
+                month_invoiced += total
+            else:
+                month_not_invoiced += total
+        
+        if month_gigs.exists():
+            month_name = f"{czech_months[month_num]} {month_year}"
+            month_name_short = month_date.strftime('%m/%Y')
+            monthly_data.append({
+                'month': month_name,
+                'month_short': month_name_short,
+                'total': month_total,
+                'invoiced': month_invoiced,
+                'not_invoiced': month_not_invoiced,
+                'count': month_gigs.count(),
+            })
+    
+    # Roční přehled
+    yearly_data = {}
+    for gig in user_gigs:
+        year = gig.date.year
+        if year not in yearly_data:
+            yearly_data[year] = {
+                'total': Decimal('0'),
+                'invoiced': Decimal('0'),
+                'not_invoiced': Decimal('0'),
+                'count': 0,
+            }
+        
+        total = gig.get_total_price()
+        yearly_data[year]['total'] += total
+        yearly_data[year]['count'] += 1
+        
+        if gig.status == 'paid':
+            yearly_data[year]['invoiced'] += total
+        else:
+            yearly_data[year]['not_invoiced'] += total
+    
+    yearly_list = [
+        {
+            'year': year,
+            'total': data['total'],
+            'invoiced': data['invoiced'],
+            'not_invoiced': data['not_invoiced'],
+            'count': data['count'],
+        }
+        for year, data in sorted(yearly_data.items(), reverse=True)
+    ]
+    
+    # Statistiky podle statusu
+    status_stats = {}
+    for status_choice, status_label in Gig.STATUS_CHOICES:
+        status_gigs = user_gigs.filter(status=status_choice)
+        status_total = Decimal('0')
+        for gig in status_gigs:
+            status_total += gig.get_total_price()
+        
+        status_stats[status_label] = {
+            'count': status_gigs.count(),
+            'total': status_total,
+        }
+    
+    context = {
+        'total_price': total_price,
+        'invoiced_price': invoiced_price,
+        'not_invoiced_price': not_invoiced_price,
+        'invoiced_percentage': invoiced_percentage,
+        'gig_count': user_gigs.count(),
+        'monthly_data': monthly_data,
+        'yearly_data': yearly_list,
+        'status_stats': status_stats,
+        'current_month': current_month,
+        'current_year': current_year,
+    }
+    
+    return render(request, 'gigs/financial_overview.html', context)
 
 @login_required
 def gig_create(request):
@@ -109,6 +238,7 @@ def gigequipment_create(request, gig_id):
         form = GigEquipmentForm(request.POST)
         if form.is_valid():
             eq = form.save(commit=False)
+            eq.gig = gig
             eq.agreed_price = eq.equipment.default_price 
             eq.save()   
             return redirect('gig_detail', gig_id=gig.id)
