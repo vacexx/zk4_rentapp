@@ -114,6 +114,8 @@ def calendar_subscription(request, token):
         'METHOD:PUBLISH',
         f'X-WR-CALNAME:ZK4 Production ({user.username})',
         'X-WR-TIMEZONE:Europe/Prague',
+        'REFRESH-INTERVAL:PT15M',
+        'X-PUBLISH-TTL:PT15M',
     ]
 
     for gig in gigs:
@@ -152,6 +154,10 @@ def calendar_subscription(request, token):
     content = '\r\n'.join(ics_lines) + '\r\n'
     response = HttpResponse(content, content_type='text/calendar; charset=utf-8')
     response['Content-Disposition'] = 'inline; filename="zk4-production-gigs.ics"'
+    # Cache-busting headers to ensure Apple Calendar always fetches the latest version
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
     return response
 
 @login_required
