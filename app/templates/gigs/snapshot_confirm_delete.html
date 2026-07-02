@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Smazat fakturu | ZK4 Production{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-6">
+                <div class="alert alert-danger border-0 rounded-4 shadow-sm" role="alert">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-exclamation-triangle display-4 text-danger"></i>
+                    </div>
+                    <h4 class="alert-heading text-center fw-bold">Smazat uloženou fakturu?</h4>
+                    <p class="mb-3">
+                        Opravdu chcete smazat fakturu uloženou dne <strong>{{ snapshot.created_at|date:"d. m. Y H:i" }}</strong>?
+                    </p>
+                    <p class="text-muted small mb-4">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Tato akce je trvalá a fakturu nebude možné obnovit.
+                    </p>
+                    <form method="POST" class="d-flex gap-2 justify-content-center">
+                        {% csrf_token %}
+                        <a href="{% url 'gig_detail' snapshot.gig.id %}" class="btn btn-outline-secondary btn-lg rounded-pill px-5">
+                            Zrušit
+                        </a>
+                        <button type="submit" class="btn btn-danger btn-lg rounded-pill px-5 shadow-sm">
+                            <i class="bi bi-trash3-fill me-2"></i>Smazat
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

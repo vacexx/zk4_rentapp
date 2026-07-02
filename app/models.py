@@ -156,3 +156,33 @@ class CustomInvoiceItem(models.Model):
             qty = Decimal(str(self.quantity or 0))
             price = Decimal(str(self.unit_price or 0))
             return qty * price
+
+
+class InvoiceSnapshot(models.Model):
+    """Uložený stav faktury v konkrétním čase - immutable snapshot."""
+    
+    gig = models.ForeignKey(Gig, on_delete=models.CASCADE, related_name='invoice_snapshots', verbose_name="Akce")
+    author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Autor")
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Uloženo")
+    invoice_number = models.CharField(max_length=100, blank=True, verbose_name="Číslo faktury")
+    
+    # Snapshot dat
+    work_phases_data = models.JSONField(default=list, verbose_name="Snapshot pracovních fází")
+    equipment_data = models.JSONField(default=list, verbose_name="Snapshot techniky")
+    custom_items_data = models.JSONField(default=list, verbose_name="Snapshot vlastních položek")
+    
+    # Celkové částky v čase uložení
+    total_work_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Cena za práci")
+    total_equipment_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Cena za techniku")
+    total_custom_items_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Cena za ostatní")
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Celková cena")
+    
+    class Meta:
+        verbose_name = "Snapshot faktury"
+        verbose_name_plural = "Snapshoty faktur"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Invoice Snapshot - {self.gig.name} ({self.created_at.strftime('%d.%m.%Y %H:%M')})"

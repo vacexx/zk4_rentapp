@@ -1,24 +1,158 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Gig, CustomInvoiceItem
-from .forms import GigForm, WorkPhaseForm, WorkPhase, GigEquipmentForm, GigEquipment, ClientForm, Client, CustomInvoiceItemForm
+from django.http import HttpResponse, Http404
+from django.urls import reverse
+from django.core.signing import Signer, BadSignature
+from .models import Gig, CustomInvoiceItem, WorkPhase, GigEquipment, Client
+from .forms import GigForm, WorkPhaseForm, GigEquipmentForm, ClientForm, CustomInvoiceItemForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 import urllib.parse
-from datetime import datetime, timedelta
+import calendar
+from datetime import datetime, timedelta, date
 from django.db.models import Sum, Q
 from decimal import Decimal
 
+
+def _ics_escape(value):
+    if not value:
+        return ''
+    escaped = str(value).replace('\\', '\\\\')
+    escaped = escaped.replace('\r\n', '\n').replace('\r', '\n')
+    escaped = escaped.replace('\n', '\\n')
+    escaped = escaped.replace(';', '\\;')
+    escaped = escaped.replace(',', '\\,')
+    return escaped
+
+
+def _calendar_token_for_user(user):
+    signer = Signer(salt='calendar-subscription')
+    return signer.sign(str(user.pk))
+
+
+def _user_from_calendar_token(token):
+    signer = Signer(salt='calendar-subscription')
+    try:
+        user_id = signer.unsign(token)
+        return User.objects.get(pk=user_id)
+    except (BadSignature, User.DoesNotExist, ValueError):
+        return None
+
+
+def _get_user_gig_or_404(request, gig_id):
+    return get_object_or_404(Gig, id=gig_id, author=request.user)
+
 @login_required
 def gig_detail(request, gig_id):
-    gig = get_object_or_404(Gig, id=gig_id)
+    gig = _get_user_gig_or_404(request, gig_id)
+    
+    from .models import InvoiceSnapshot
+    invoice_snapshots = InvoiceSnapshot.objects.filter(gig=gig).order_by('-created_at')
     
     context = {
         'gig': gig,
         'phases': gig.work_phases.all(),
         'equipment': gig.equipment_used.all(),
         'custom_items': gig.custom_items.all(),
+        'invoice_snapshots': invoice_snapshots,
     }
     return render(request, 'gigs/gig_detail.html', context)
+
+@login_required
+def gig_calendar_export(request, gig_id):
+    gig = _get_user_gig_or_404(request, gig_id)
+    phases = gig.work_phases.order_by('start_time')
+    if phases.exists():
+        start = phases.first().start_time
+        end = phases.last().end_time
+        dtstart = start.strftime('%Y%m%dT%H%M%S')
+        dtend = end.strftime('%Y%m%dT%H%M%S')
+    else:
+        dtstart = gig.date.strftime('%Y%m%d')
+        dtend = (gig.date + timedelta(days=1)).strftime('%Y%m%d')
+
+    location = gig.client.address if gig.client and gig.client.address else ''
+    description_lines = [f"Klient: {gig.client.name}" if gig.client else 'Klient: N/A']
+    if gig.notes:
+        description_lines.append('')
+        description_lines.append(gig.notes)
+    description = '\n'.join(description_lines)
+
+    ics_lines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//ZK4 RentApp//Apple Calendar Export//CZ',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        'BEGIN:VEVENT',
+        f'UID:gig-{gig.id}@zk4_rentapp',
+        f'DTSTAMP:{datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")}',
+        f'SUMMARY:{_ics_escape(gig.name)}',
+        f'DESCRIPTION:{_ics_escape(description)}',
+        f'LOCATION:{_ics_escape(location)}',
+        f'DTSTART:{dtstart}',
+        f'DTEND:{dtend}',
+        'END:VEVENT',
+        'END:VCALENDAR',
+    ]
+    content = '\r\n'.join(ics_lines) + '\r\n'
+    response = HttpResponse(content, content_type='text/calendar; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="gig-{gig.id}.ics"'
+    return response
+
+@login_required
+def calendar_subscription(request, token):
+    user = _user_from_calendar_token(token)
+    if not user:
+        raise Http404()
+
+    gigs = Gig.objects.filter(author=user).order_by('date')
+    ics_lines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//ZK4 RentApp//Calendar Subscription//CZ',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        f'X-WR-CALNAME:ZK4 Production ({user.username})',
+        'X-WR-TIMEZONE:Europe/Prague',
+    ]
+
+    for gig in gigs:
+        phases = gig.work_phases.order_by('start_time')
+        if phases.exists():
+            start = phases.first().start_time
+            end = phases.last().end_time
+            dtstart = start.strftime('%Y%m%dT%H%M%S')
+            dtend = end.strftime('%Y%m%dT%H%M%S')
+        else:
+            dtstart = gig.date.strftime('%Y%m%d')
+            dtend = (gig.date + timedelta(days=1)).strftime('%Y%m%d')
+
+        location = gig.client.address if gig.client and gig.client.address else ''
+        description_lines = [f"Klient: {gig.client.name}" if gig.client else 'Klient: N/A']
+        if gig.status:
+            description_lines.append(f"Stav: {gig.get_status_display()}")
+        if gig.notes:
+            description_lines.append('')
+            description_lines.append(gig.notes)
+        description = '\n'.join(description_lines)
+
+        ics_lines.extend([
+            'BEGIN:VEVENT',
+            f'UID:calendar-{user.pk}-gig-{gig.id}@zk4_rentapp',
+            f'DTSTAMP:{datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")}',
+            f'SUMMARY:{_ics_escape(gig.name)}',
+            f'DESCRIPTION:{_ics_escape(description)}',
+            f'LOCATION:{_ics_escape(location)}',
+            f'DTSTART:{dtstart}',
+            f'DTEND:{dtend}',
+            'END:VEVENT',
+        ])
+
+    ics_lines.append('END:VCALENDAR')
+    content = '\r\n'.join(ics_lines) + '\r\n'
+    response = HttpResponse(content, content_type='text/calendar; charset=utf-8')
+    response['Content-Disposition'] = 'inline; filename="zk4-production-gigs.ics"'
+    return response
 
 @login_required
 def gig_list(request):
@@ -26,13 +160,92 @@ def gig_list(request):
     gigs = Gig.objects.filter(author=request.user).order_by('-date')
 
     status_filter = request.GET.get('status')
+    client_filter = request.GET.get('client')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
 
     if status_filter:
         gigs = gigs.filter(status=status_filter)
 
+    if client_filter:
+        try:
+            gigs = gigs.filter(client_id=int(client_filter))
+        except (ValueError, TypeError):
+            client_filter = None
+
+    if date_from:
+        try:
+            date_from_value = date.fromisoformat(date_from)
+            gigs = gigs.filter(date__gte=date_from_value)
+        except ValueError:
+            date_from = None
+
+    if date_to:
+        try:
+            date_to_value = date.fromisoformat(date_to)
+            gigs = gigs.filter(date__lte=date_to_value)
+        except ValueError:
+            date_to = None
+
+    clients = Client.objects.filter(gig__author=request.user).distinct().order_by('name')
+    today = date.today()
+    try:
+        month = int(request.GET.get('month', today.month))
+        year = int(request.GET.get('year', today.year))
+    except ValueError:
+        month = today.month
+        year = today.year
+
+    czech_months = {
+        1: 'Leden', 2: 'Únor', 3: 'Březen', 4: 'Duben',
+        5: 'Květen', 6: 'Červen', 7: 'Červenec', 8: 'Srpen',
+        9: 'Září', 10: 'Říjen', 11: 'Listopad', 12: 'Prosinec'
+    }
+
+    month_gigs = gigs.filter(date__year=year, date__month=month)
+    gigs_by_day = {}
+    for gig in month_gigs:
+        gigs_by_day.setdefault(gig.date.day, []).append(gig)
+
+    cal = calendar.Calendar(firstweekday=0)
+    month_weeks = []
+    for week in cal.monthdayscalendar(year, month):
+        week_days = []
+        for day in week:
+            week_days.append({
+                'day': day,
+                'gigs': gigs_by_day.get(day, []) if day else [],
+            })
+        month_weeks.append(week_days)
+
+    prev_year, prev_month = (year - 1, 12) if month == 1 else (year, month - 1)
+    next_year, next_month = (year + 1, 1) if month == 12 else (year, month + 1)
+
+    calendar_data = {
+        'month_name': czech_months.get(month, calendar.month_name[month]),
+        'month': month,
+        'year': year,
+        'weeks': month_weeks,
+        'prev_month': prev_month,
+        'prev_year': prev_year,
+        'next_month': next_month,
+        'next_year': next_year,
+    }
+
+    subscription_url = request.build_absolute_uri(
+        reverse('calendar_subscription', args=[_calendar_token_for_user(request.user)])
+    )
+
     context = {
         'gigs': gigs,
         'current_status': status_filter,
+        'current_client': client_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'clients': clients,
+        'today': today,
+        'calendar_data': calendar_data,
+        'subscription_url': subscription_url,
     }
     return render(request, 'gigs/gig_list.html', context)
 
@@ -186,16 +399,16 @@ def gig_create(request):
 @login_required
 def gig_delete(request, gig_id):
     """Smazání celé akce."""
-    gig = get_object_or_404(Gig, id=gig_id)
+    gig = _get_user_gig_or_404(request, gig_id)
     if request.method == 'POST':
         gig.delete()
-        return redirect('gig_list') # Po smazání se vrátíme na přehled všech akcí
+        return redirect('gig_list')
     return render(request, 'gigs/gig_confirm_delete.html', {'gig': gig})
 
 @login_required
 def workphase_create(request, gig_id):
     """Přidání odpracovaného času (fáze) ke konkrétní akci."""
-    gig = get_object_or_404(Gig, id=gig_id)
+    gig = _get_user_gig_or_404(request, gig_id)
     if request.method == 'POST':
         form = WorkPhaseForm(request.POST)
         if form.is_valid():
@@ -210,7 +423,7 @@ def workphase_create(request, gig_id):
 @login_required
 def workphase_update(request, phase_id):
     """Úprava existující fáze."""
-    phase = get_object_or_404(WorkPhase, id=phase_id)
+    phase = get_object_or_404(WorkPhase, id=phase_id, gig__author=request.user)
     if request.method == 'POST':
         form = WorkPhaseForm(request.POST, instance=phase)
         if form.is_valid():
@@ -223,7 +436,7 @@ def workphase_update(request, phase_id):
 @login_required
 def workphase_delete(request, phase_id):
     """Smazání fáze."""
-    phase = get_object_or_404(WorkPhase, id=phase_id)
+    phase = get_object_or_404(WorkPhase, id=phase_id, gig__author=request.user)
     gig_id = phase.gig.id
     if request.method == 'POST':
         phase.delete()
@@ -233,7 +446,7 @@ def workphase_delete(request, phase_id):
 @login_required
 def gigequipment_create(request, gig_id):
     """Přidání techniky k akci s automatickou cenou."""
-    gig = get_object_or_404(Gig, id=gig_id)
+    gig = _get_user_gig_or_404(request, gig_id)
     if request.method == 'POST':
         form = GigEquipmentForm(request.POST)
         if form.is_valid():
@@ -249,7 +462,7 @@ def gigequipment_create(request, gig_id):
 @login_required
 def gigequipment_delete(request, eq_id):
     """Smazání techniky z akce."""
-    equipment = get_object_or_404(GigEquipment, id=eq_id)
+    equipment = get_object_or_404(GigEquipment, id=eq_id, gig__author=request.user)
     gig_id = equipment.gig.id
     if request.method == 'POST':
         equipment.delete()
@@ -258,7 +471,7 @@ def gigequipment_delete(request, eq_id):
 
 @login_required
 def gig_print(request, gig_id):
-    gig = get_object_or_404(Gig, id=gig_id)
+    gig = _get_user_gig_or_404(request, gig_id)
     
     phases = WorkPhase.objects.filter(gig=gig).order_by('start_time')
     equipment = GigEquipment.objects.filter(gig=gig)
@@ -282,33 +495,34 @@ def gig_print(request, gig_id):
     }
     
     return render(request, 'gigs/gig_print.html', context)
+
 
 @login_required
-def gig_print(request, gig_id):
-    gig = get_object_or_404(Gig, id=gig_id)
+def snapshot_pdf(request, snapshot_id):
+    """Display a saved invoice snapshot in print-friendly format."""
+    from .models import InvoiceSnapshot
     
-    phases = WorkPhase.objects.filter(gig=gig).order_by('start_time')
-    equipment = GigEquipment.objects.filter(gig=gig)
-    custom_items = CustomInvoiceItem.objects.filter(gig=gig)
-
+    snapshot = get_object_or_404(InvoiceSnapshot, id=snapshot_id, author=request.user)
+    gig = snapshot.gig
+    
+    # Build QR code URL if bank account available
     qr_url = None
     if gig.author and hasattr(gig.author, 'profile') and gig.author.profile.bank_account:
         iban = gig.author.profile.bank_account.replace(" ", "")
-        amount = f"{gig.get_total_price():.2f}"
+        amount = f"{snapshot.total_price:.2f}"
         vs = f"{gig.date.strftime('%Y%m%d')}{gig.id}"
         spd_string = f"SPD*1.0*ACC:{iban}*AM:{amount}*CC:CZK*X-VS:{vs}"
         safe_spd = urllib.parse.quote(spd_string)
         qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={safe_spd}"
-
+    
     context = {
         'gig': gig,
-        'phases': phases,
-        'equipment': equipment,
-        'custom_items': custom_items,
+        'snapshot': snapshot,
         'qr_url': qr_url,
+        'is_snapshot': True,
     }
     
-    return render(request, 'gigs/gig_print.html', context)
+    return render(request, 'gigs/snapshot_print.html', context)
 
 @login_required
 def client_create(request):
@@ -326,7 +540,7 @@ def client_create(request):
 @login_required
 def gig_update(request, gig_id):
     """Úprava existující akce (změna stavu, data, klienta...)."""
-    gig = get_object_or_404(Gig, id=gig_id)
+    gig = _get_user_gig_or_404(request, gig_id)
     
     if request.method == 'POST':
         form = GigForm(request.POST, instance=gig)
@@ -341,7 +555,7 @@ def gig_update(request, gig_id):
 @login_required
 def custom_invoice_item_create(request, gig_id):
     """Přidání vlastní položky na fakturu."""
-    gig = get_object_or_404(Gig, id=gig_id)
+    gig = _get_user_gig_or_404(request, gig_id)
     if request.method == 'POST':
         form = CustomInvoiceItemForm(request.POST)
         if form.is_valid():
@@ -356,7 +570,7 @@ def custom_invoice_item_create(request, gig_id):
 @login_required
 def custom_invoice_item_update(request, item_id):
     """Úprava vlastní položky na faktuře."""
-    item = get_object_or_404(CustomInvoiceItem, id=item_id)
+    item = get_object_or_404(CustomInvoiceItem, id=item_id, gig__author=request.user)
     if request.method == 'POST':
         form = CustomInvoiceItemForm(request.POST, instance=item)
         if form.is_valid():
@@ -369,9 +583,101 @@ def custom_invoice_item_update(request, item_id):
 @login_required
 def custom_invoice_item_delete(request, item_id):
     """Smazání vlastní položky z faktury."""
-    item = get_object_or_404(CustomInvoiceItem, id=item_id)
+    item = get_object_or_404(CustomInvoiceItem, id=item_id, gig__author=request.user)
     gig_id = item.gig.id
     if request.method == 'POST':
         item.delete()
         return redirect('gig_detail', gig_id=gig_id)
     return render(request, 'gigs/custominvoiceitem_confirm_delete.html', {'item': item})
+
+
+@login_required
+def save_invoice(request, gig_id):
+    """Uloží snapshot faktury v jejím aktuálním stavu."""
+    from django.shortcuts import redirect
+    from django.contrib import messages
+    import json
+    
+    gig = get_object_or_404(Gig, id=gig_id, author=request.user)
+    
+    # Gather current invoice data
+    work_phases = gig.work_phases.all()
+    equipment = gig.equipment_used.all()
+    custom_items = gig.custom_items.all()
+    
+    # Serialize work phases
+    work_phases_data = []
+    for phase in work_phases:
+        work_phases_data.append({
+            'id': phase.id,
+            'phase': phase.get_phase_display(),
+            'start_time': phase.start_time.isoformat(),
+            'end_time': phase.end_time.isoformat(),
+            'duration_hours': phase.get_duration_hours(),
+            'hourly_rate': phase.hourly_rate,
+            'price': float(phase.get_price()),
+        })
+    
+    # Serialize equipment
+    equipment_data = []
+    for eq in equipment:
+        equipment_data.append({
+            'id': eq.id,
+            'equipment_name': eq.equipment.name,
+            'quantity': eq.quantity,
+            'agreed_price': float(eq.agreed_price),
+            'total_price': float(eq.get_total_price()),
+        })
+    
+    # Serialize custom items
+    custom_items_data = []
+    for item in custom_items:
+        custom_items_data.append({
+            'id': item.id,
+            'description': item.description,
+            'item_type': item.item_type,
+            'fixed_price': float(item.fixed_price or 0) if item.item_type == 'fixed' else None,
+            'quantity': float(item.quantity or 0) if item.item_type == 'hourly' else None,
+            'unit_price': float(item.unit_price or 0) if item.item_type == 'hourly' else None,
+            'total_price': float(item.get_total_price()),
+        })
+    
+    # Calculate totals
+    total_work_price = gig.get_total_work_price()
+    total_equipment_price = gig.get_total_equipment_price()
+    total_custom_items_price = gig.get_total_custom_items_price()
+    total_price = gig.get_total_price()
+    
+    # Create snapshot
+    from .models import InvoiceSnapshot
+    snapshot = InvoiceSnapshot.objects.create(
+        gig=gig,
+        author=request.user,
+        work_phases_data=work_phases_data,
+        equipment_data=equipment_data,
+        custom_items_data=custom_items_data,
+        total_work_price=total_work_price,
+        total_equipment_price=total_equipment_price,
+        total_custom_items_price=total_custom_items_price,
+        total_price=total_price,
+    )
+    
+    messages.success(request, f'Faktura byla úspěšně uložena ({snapshot.created_at.strftime("%d.%m.%Y %H:%M")})')
+    return redirect('gig_detail', gig_id=gig_id)
+
+
+@login_required
+def delete_snapshot(request, snapshot_id):
+    """Delete an invoice snapshot."""
+    from django.contrib import messages
+    from .models import InvoiceSnapshot
+    
+    snapshot = get_object_or_404(InvoiceSnapshot, id=snapshot_id, author=request.user)
+    gig_id = snapshot.gig.id
+    
+    if request.method == 'POST':
+        snapshot.delete()
+        messages.success(request, 'Uložená faktura byla smazána.')
+        return redirect('gig_detail', gig_id=gig_id)
+    
+    return render(request, 'gigs/snapshot_confirm_delete.html', {'snapshot': snapshot})
