@@ -29,6 +29,15 @@ def _calendar_token_for_user(user):
     return signer.sign(str(user.pk))
 
 
+def _subscription_urls_for_user(request, user):
+    token = _calendar_token_for_user(user)
+    absolute_url = request.build_absolute_uri(
+        reverse('calendar_subscription_query') + '?' + urllib.parse.urlencode({'token': token})
+    )
+    webcal_url = absolute_url.replace('https://', 'webcal://').replace('http://', 'webcal://')
+    return absolute_url, webcal_url
+
+
 def _user_from_calendar_token(token):
     signer = Signer(salt='calendar-subscription')
     try:
@@ -99,8 +108,10 @@ def gig_calendar_export(request, gig_id):
     response['Content-Disposition'] = f'attachment; filename="gig-{gig.id}.ics"'
     return response
 
-@login_required
-def calendar_subscription(request, token):
+def calendar_subscription(request, token=None):
+    if token is None:
+        token = request.GET.get('token')
+
     user = _user_from_calendar_token(token)
     if not user:
         raise Http404()
@@ -238,9 +249,7 @@ def gig_list(request):
         'next_year': next_year,
     }
 
-    subscription_url = request.build_absolute_uri(
-        reverse('calendar_subscription', args=[_calendar_token_for_user(request.user)])
-    )
+    subscription_url, subscription_url_webcal = _subscription_urls_for_user(request, request.user)
 
     context = {
         'gigs': gigs,
@@ -252,6 +261,7 @@ def gig_list(request):
         'today': today,
         'calendar_data': calendar_data,
         'subscription_url': subscription_url,
+        'subscription_url_webcal': subscription_url_webcal,
     }
     return render(request, 'gigs/gig_list.html', context)
 

@@ -10,6 +10,7 @@ urlpatterns = [
     path('snapshot/<int:snapshot_id>/smazat/', views.delete_snapshot, name='delete_snapshot'),
     path('akce/<int:gig_id>/kalendar/', views.gig_calendar_export, name='gig_calendar_export'),
     path('kalendar-feed/<path:token>/', views.calendar_subscription, name='calendar_subscription'),
+    path('kalendar-feed/', views.calendar_subscription, name='calendar_subscription_query'),
     path('akce/nova/', views.gig_create, name='gig_create'),
     path('akce/<int:gig_id>/', views.gig_detail, name='gig_detail'),
     path('akce/<int:gig_id>/upravit/', views.gig_update, name='gig_update'),
