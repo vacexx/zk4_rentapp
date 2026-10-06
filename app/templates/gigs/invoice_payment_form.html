@@ -21,7 +21,7 @@
                 <div class="form-text">Vyplňte pouze u již uhrazené faktury.</div>
                 {% for error in form.payment_date.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
             </div>
-            <div class="mb-4">
+            <div class="mb-4" id="due-date-field">
                 <label for="{{ form.due_date.id_for_label }}" class="form-label fw-semibold">{{ form.due_date.label }}</label>
                 {{ form.due_date }}
                 <div class="form-text">Výchozí splatnost je 14 dní od vystavení; datum můžete upravit.</div>
@@ -34,4 +34,18 @@
         </form>
     </div>
 </div>
+<script>
+    const paymentMethod = document.getElementById('{{ form.payment_method.id_for_label }}');
+    const dueDateField = document.getElementById('due-date-field');
+    const dueDateInput = document.getElementById('{{ form.due_date.id_for_label }}');
+
+    function updateDueDateVisibility() {
+        const isUnpaid = paymentMethod.value === 'unpaid';
+        dueDateField.hidden = !isUnpaid;
+        dueDateInput.disabled = !isUnpaid;
+    }
+
+    paymentMethod.addEventListener('change', updateDueDateVisibility);
+    updateDueDateVisibility();
+</script>
 {% endblock %}

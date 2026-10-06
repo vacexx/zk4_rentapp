@@ -38,6 +38,17 @@ class InvoicePaymentTests(TestCase):
 		self.assertContains(response, 'Hotově')
 		self.assertNotContains(response, 'QR Platba')
 
+	def test_bank_transfer_does_not_require_or_store_due_date(self):
+		response = self.client.post(
+			reverse('save_invoice', args=[self.gig.id]),
+			{'payment_method': 'bank_transfer', 'payment_date': '2026-10-05'},
+		)
+
+		self.assertRedirects(response, reverse('gig_detail', args=[self.gig.id]))
+		snapshot = InvoiceSnapshot.objects.get(gig=self.gig)
+		self.assertEqual(snapshot.payment_method, 'bank_transfer')
+		self.assertIsNone(snapshot.due_date)
+
 	def test_paid_invoice_requires_payment_date(self):
 		response = self.client.post(
 			reverse('save_invoice', args=[self.gig.id]),
