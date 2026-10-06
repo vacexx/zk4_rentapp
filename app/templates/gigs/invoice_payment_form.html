@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Vystavit fakturu | ZK4 Production{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <h1 class="h3 fw-bold mb-1">Vystavit fakturu</h1>
+        <p class="text-muted mb-4">{{ gig.name }} · {{ gig.get_total_price|floatformat:0 }} Kč</p>
+
+        <form method="post" class="bg-white border rounded-3 p-4 shadow-sm">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="{{ form.payment_method.id_for_label }}" class="form-label fw-semibold">{{ form.payment_method.label }}</label>
+                {{ form.payment_method }}
+                {% for error in form.payment_method.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="mb-4">
+                <label for="{{ form.payment_date.id_for_label }}" class="form-label fw-semibold">{{ form.payment_date.label }}</label>
+                {{ form.payment_date }}
+                <div class="form-text">Vyplňte pouze u již uhrazené faktury.</div>
+                {% for error in form.payment_date.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="mb-4">
+                <label for="{{ form.due_date.id_for_label }}" class="form-label fw-semibold">{{ form.due_date.label }}</label>
+                {{ form.due_date }}
+                <div class="form-text">Výchozí splatnost je 14 dní od vystavení; datum můžete upravit.</div>
+                {% for error in form.due_date.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success"><i class="bi bi-file-earmark-check me-2"></i>Vystavit fakturu</button>
+                <a href="{% url 'gig_detail' gig.id %}" class="btn btn-outline-secondary">Zrušit</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

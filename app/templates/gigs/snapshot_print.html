@@ -55,14 +55,26 @@
     <div class="invoice-header d-flex justify-content-between align-items-center">
         <div>
             <h1 class="fw-bold mb-0">FAKTURA / VÝKAZ</h1>
+            <p class="text-muted mb-0">Číslo faktury: {{ snapshot.invoice_number }}</p>
             <p class="text-muted mb-0">Variabilní symbol: {{ gig.date|date:"Ymd" }}{{ gig.id }} | Zakázka: {{ gig.name }}</p>
             <p class="text-muted">Datum provedení zakázky: {{ gig.date|date:"d. m. Y" }}</p>
         </div>
         <div class="text-end">
             <h6 class="mb-0">Datum vystavení:</h6>
             <p>{{ snapshot.created_at|date:"d. m. Y" }}</p>
-            <h6 class="mb-0">Datum splatnosti:</h6>
-            <p>{{ snapshot.created_at|add_days:14|date:"d. m. Y" }}</p>
+            {% if snapshot.payment_method == "unpaid" %}
+                <h6 class="mb-0">Datum splatnosti:</h6>
+                {% if snapshot.due_date %}
+                    <p>{{ snapshot.due_date|date:"d. m. Y" }}</p>
+                {% else %}
+                    <p>{{ snapshot.created_at|add_days:14|date:"d. m. Y" }}</p>
+                {% endif %}
+            {% else %}
+                <h6 class="mb-0">Datum úhrady:</h6>
+                <p>{{ snapshot.payment_date|date:"d. m. Y" }}</p>
+                <h6 class="mb-0">Způsob úhrady:</h6>
+                <p>{{ snapshot.get_payment_method_display }}</p>
+            {% endif %}
         </div>
     </div>
 
@@ -188,7 +200,7 @@
             <p class="mb-0 fs-5">Celkem k úhradě:</p>
             <h1 class="fw-bold text-dark">{{ snapshot.total_price|floatformat:0 }} Kč</h1>
     
-        {% if qr_url %}
+        {% if qr_url and snapshot.payment_method == "unpaid" %}
             <div class="d-flex justify-content-end mt-4">
                 <div class="text-center">
                     <img src="{{ qr_url }}" alt="QR Platba" class="border p-1" style="width: 130px; height: 130px;">

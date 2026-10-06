@@ -3,13 +3,14 @@ from django.http import HttpResponse, Http404
 from django.urls import reverse
 from django.core.signing import Signer, BadSignature
 from .models import Gig, CustomInvoiceItem, WorkPhase, GigEquipment, Client
-from .forms import GigForm, WorkPhaseForm, GigEquipmentForm, ClientForm, CustomInvoiceItemForm
+from .forms import GigForm, WorkPhaseForm, GigEquipmentForm, ClientForm, CustomInvoiceItemForm, InvoicePaymentForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 import urllib.parse
 import calendar
 from datetime import datetime, timedelta, date
 from django.db.models import Sum, Q
+from django.utils import timezone
 from decimal import Decimal
 
 
@@ -523,7 +524,7 @@ def snapshot_pdf(request, snapshot_id):
     
     # Build QR code URL if bank account available
     qr_url = None
-    if gig.author and hasattr(gig.author, 'profile') and gig.author.profile.bank_account:
+    if snapshot.payment_method == 'unpaid' and gig.author and hasattr(gig.author, 'profile') and gig.author.profile.bank_account:
         iban = gig.author.profile.bank_account.replace(" ", "")
         amount = f"{snapshot.total_price:.2f}"
         vs = f"{gig.date.strftime('%Y%m%d')}{gig.id}"
@@ -610,11 +611,17 @@ def custom_invoice_item_delete(request, item_id):
 @login_required
 def save_invoice(request, gig_id):
     """Uloží snapshot faktury v jejím aktuálním stavu."""
-    from django.shortcuts import redirect
     from django.contrib import messages
-    import json
     
     gig = get_object_or_404(Gig, id=gig_id, author=request.user)
+    form = InvoicePaymentForm(
+        request.POST or None,
+        initial={'due_date': timezone.localdate() + timedelta(days=14)},
+    )
+    if request.method == 'GET':
+        return render(request, 'gigs/invoice_payment_form.html', {'form': form, 'gig': gig})
+    if not form.is_valid():
+        return render(request, 'gigs/invoice_payment_form.html', {'form': form, 'gig': gig})
     
     # Gather current invoice data
     work_phases = gig.work_phases.all()
@@ -676,7 +683,12 @@ def save_invoice(request, gig_id):
         total_equipment_price=total_equipment_price,
         total_custom_items_price=total_custom_items_price,
         total_price=total_price,
+        payment_method=form.cleaned_data['payment_method'],
+        payment_date=form.cleaned_data['payment_date'],
+        due_date=form.cleaned_data['due_date'],
     )
+    snapshot.invoice_number = f'{snapshot.created_at.year}-{snapshot.pk:05d}'
+    snapshot.save(update_fields=['invoice_number'])
     
     messages.success(request, f'Faktura byla úspěšně uložena ({snapshot.created_at.strftime("%d.%m.%Y %H:%M")})')
     return redirect('gig_detail', gig_id=gig_id)

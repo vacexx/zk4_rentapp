@@ -1,5 +1,5 @@
 from django import forms
-from .models import Gig, WorkPhase, GigEquipment, Client, CustomInvoiceItem
+from .models import Gig, WorkPhase, GigEquipment, Client, CustomInvoiceItem, InvoiceSnapshot
 
 class GigForm(forms.ModelForm):
     class Meta:
@@ -67,3 +67,38 @@ class CustomInvoiceItemForm(forms.ModelForm):
             'quantity': 'Počet hodin',
             'unit_price': 'Cena za hodinu (Kč/h)',
         }
+
+class InvoicePaymentForm(forms.Form):
+    payment_method = forms.ChoiceField(
+        choices=InvoiceSnapshot.PAYMENT_METHOD_CHOICES,
+        label='Stav úhrady',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+    )
+    payment_date = forms.DateField(
+        required=False,
+        label='Datum úhrady',
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+    )
+    due_date = forms.DateField(
+        required=False,
+        label='Datum splatnosti',
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        payment_method = cleaned_data.get('payment_method')
+        payment_date = cleaned_data.get('payment_date')
+        due_date = cleaned_data.get('due_date')
+
+        if payment_method != 'unpaid' and not payment_date:
+            self.add_error('payment_date', 'U uhrazené faktury vyplňte datum úhrady.')
+        elif payment_method == 'unpaid' and payment_date:
+            self.add_error('payment_date', 'Datum úhrady lze vyplnit pouze u uhrazené faktury.')
+
+        if payment_method == 'unpaid' and not due_date:
+            self.add_error('due_date', 'U nezaplacené faktury vyplňte datum splatnosti.')
+        elif payment_method != 'unpaid':
+            cleaned_data['due_date'] = None
+
+        return cleaned_data

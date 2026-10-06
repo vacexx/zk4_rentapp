@@ -287,6 +287,8 @@
                         <tr>
                             <td class="ps-4">
                                 {{ snapshot.created_at|date:"d. m. Y H:i" }}
+                                {% if snapshot.invoice_number %}<div class="small text-muted">Č. {{ snapshot.invoice_number }}</div>{% endif %}
+                                <div class="small text-muted">{{ snapshot.get_payment_method_display }}{% if snapshot.payment_date %}, {{ snapshot.payment_date|date:"d. m. Y" }}{% endif %}</div>
                             </td>
                             <td class="text-end text-muted">{{ snapshot.total_work_price|floatformat:0 }} Kč</td>
                             <td class="text-end text-muted">{{ snapshot.total_equipment_price|floatformat:0 }} Kč</td>

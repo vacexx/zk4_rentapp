@@ -160,6 +160,12 @@ class CustomInvoiceItem(models.Model):
 
 class InvoiceSnapshot(models.Model):
     """Uložený stav faktury v konkrétním čase - immutable snapshot."""
+
+    PAYMENT_METHOD_CHOICES = [
+        ('unpaid', 'Nezaplaceno'),
+        ('cash', 'Hotově'),
+        ('bank_transfer', 'Bankovním převodem'),
+    ]
     
     gig = models.ForeignKey(Gig, on_delete=models.CASCADE, related_name='invoice_snapshots', verbose_name="Akce")
     author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Autor")
@@ -167,6 +173,9 @@ class InvoiceSnapshot(models.Model):
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Uloženo")
     invoice_number = models.CharField(max_length=100, blank=True, verbose_name="Číslo faktury")
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='unpaid', verbose_name="Způsob úhrady")
+    payment_date = models.DateField(null=True, blank=True, verbose_name="Datum úhrady")
+    due_date = models.DateField(null=True, blank=True, verbose_name="Datum splatnosti")
     
     # Snapshot dat
     work_phases_data = models.JSONField(default=list, verbose_name="Snapshot pracovních fází")
