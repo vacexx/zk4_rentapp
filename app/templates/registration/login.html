@@ -1,26 +1,19 @@
-{% extends 'base.html' %}
-
+{% extends 'base.html' %}{% load ui %}
 {% block title %}Přihlášení | ZK4 Production{% endblock %}
-
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-8 col-lg-6">
-    <div class="card shadow-sm rounded-4 border-0 p-4">
-    <form method="post">
-      {% csrf_token %}
-      <h1 class="h3 mb-4 fw-bold text-center">Přihlášení</h1>
-      
-      <div class="form-floating mb-3">
-        <input type="text" name="username" class="form-control rounded-3" id="floatingInput" placeholder="Jméno">
-        <label for="floatingInput">Uživatelské jméno</label>
-      </div>
-      <div class="form-floating mb-4">
-        <input type="password" name="password" class="form-control rounded-3" id="floatingPassword" placeholder="Heslo">
-        <label for="floatingPassword">Heslo</label>
-      </div>
-
-      <button class="btn btn-primary w-100 py-2 rounded-pill fw-bold" type="submit">Přihlásit se</button>
-    </form>
-  </div>
-  
+<div class="login-layout"><a href="{% url 'gig_list' %}" class="brand login-brand"><span class="brand-mark">ZK<span>4</span><b></b></span><span class="brand-caption">PRODUCTION<span>RENT &amp; MANAGEMENT</span></span></a>
+    <div class="panel login-panel"><p class="eyebrow">TVŮJ PRODUKČNÍ WORKSPACE</p><h1>Vítej zpátky<span class="heading-dot">.</span></h1><p class="login-intro">Akce, technika a fakturace. Přihlas se a měj všechno pod kontrolou.</p>
+        <form method="post">{% csrf_token %}{% if form.errors %}
+            <div class="notice" role="alert">Zkontroluj uživatelské jméno a heslo a zkus to znovu.
+            </div>
+            {% endif %}{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+            <div class="field"><label for="id_username">Uživatelské jméno</label><input type="text" name="username" id="id_username" value="{{ form.username.value|default:'' }}" autocomplete="username" placeholder="Tvoje uživatelské jméno" required autofocus>
+            </div>
+            <div class="field"><label for="id_password">Heslo</label><input type="password" name="password" id="id_password" autocomplete="current-password" placeholder="Tvoje heslo" required>
+            </div>
+            <button class="button button-primary" type="submit">Přihlásit se {% icon 'arrow' %}</button>
+        </form>
+    </div>
+    <p class="login-footnote">ZK4 PRODUCTION · OD PRVNÍHO ZAPOJENÍ PO POSLEDNÍ FAKTURU</p>
+</div>
 {% endblock %}

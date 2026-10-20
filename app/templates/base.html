@@ -1,77 +1,72 @@
+{% load static ui %}
 <!DOCTYPE html>
 <html lang="cs">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ZK4 Production{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    
-    <style>
-        body { background-color: #f8f9fa; }
-        .hover-lift { transition: transform 0.2s ease-in-out, box-shadow 0.2s; }
-        .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
-        
-        /* --- STYL HLAVIČKY A LOGA --- */
-        .zk4-header {
-            background-color: #242424; /* Opravdu tmavě šedá/černá */
-            border-bottom: 2px solid #8d30ff; /* Tenká modrá linka dole */
-        }
-        
-        .zk4-logo-wrapper {
-            display: inline-block;
-            transition: transform 0.3s ease;
-            text-decoration: none !important;
-        }
-        
-        .zk4-logo-wrapper:hover {
-            transform: scale(1.02); /* Jemné zvětšení při najetí myší */
-        }
-
-        .zk4-logo {
-            font-size: 2.2rem;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            /* Stříbrno-bílý přechod na hlavní text */
-            background: linear-gradient(45deg, #ffffff, #000000);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin: 0;
-        }
-
-        .zk4-logo span {
-            font-weight: 300; /* Tenčí řez písma pro slovo Production */
-            letter-spacing: 5px;
-            -webkit-text-fill-color: #8d30ff; /* Světle modrá (cyan) barva */
-        }
-
-        .zk4-logo i {
-            -webkit-text-fill-color: #8d30ff; /* Tmavší modrá barva pro mikrofon */
-        }
-
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="theme-color" content="#111115">
+        <meta name="color-scheme" content="dark">
+        <title>{% block title %}ZK4 Production{% endblock %}</title>
+        <link rel="stylesheet" href="{% static 'app/workspace.css' %}">
+        <script src="{% static 'app/workspace.js' %}" defer></script>
         {% block extra_css %}{% endblock %}
-    </style>
-</head>
-<body class="pb-5">
+    </head>
+    <body{% if not user.is_authenticated %} class="auth-page"{% endif %}>
+        <a class="skip-link" href="#main-content">Přejít na obsah</a>
+        {% if user.is_authenticated %}
+        <aside class="sidebar" id="workspace-nav" aria-label="Hlavní navigace">
+            <a href="{% url 'gig_list' %}" class="brand"><span class="brand-mark">ZK<span>4</span><b></b></span><span class="brand-caption">PRODUCTION<span>RENT &amp; MANAGEMENT</span></span></a>
 
-    <header class="zk4-header mb-5 py-4 shadow-lg text-center">
-        <div class="container d-flex justify-content-center">
-            <a href="{% url 'gig_list' %}" class="zk4-logo-wrapper">
-                <h1 class="zk4-logo">
-                    <i class="bi bi-speaker me-2"></i>ZK4 <span>Production</span>
-                </h1>
-            </a>
+            <div class="workspace-switch"><span class="workspace-avatar">Z</span><span>ZK4 Workspace<small>Produkční prostředí</small></span><span class="online-dot" title="Pracovní prostor"></span>
+            </div>
+            <p class="nav-label">PRACOVNÍ PROSTOR</p>
+
+            <nav class="nav-links">
+                <a href="{% url 'gig_list' %}"{% if request.resolver_match.url_name == 'gig_list' %} class="active" aria-current="page"{% endif %}>{% icon 'grid' %}Moje akce</a>
+                <a href="{% url 'financial_overview' %}"{% if request.resolver_match.url_name == 'financial_overview' %} class="active" aria-current="page"{% endif %}>{% icon 'chart' %}Finanční přehled</a>
+                <a href="{% url 'client_create' %}"{% if request.resolver_match.url_name == 'client_create' %} class="active" aria-current="page"{% endif %}>{% icon 'users' %}Přidat klienta</a>
+
+            </nav>
+
+            <div class="sidebar-note">
+                <div class="signal-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                </div>
+                <strong>Všechno pod kontrolou.</strong><p>Od prvního zapojení<br>po poslední fakturu.</p><a href="{% url 'gig_create' %}">Naplánovat akci {% icon 'arrow' %}</a>
+            </div>
+
+            <div class="sidebar-bottom">
+                <div class="profile"><span class="profile-avatar">{{ user.username|first|upper }}</span><span><strong>{{ user.get_full_name|default:user.username }}</strong><small>Člen týmu ZK4</small></span>
+                    <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="icon-button" title="Odhlásit se" aria-label="Odhlásit se">{% icon 'logout' %}</button>
+                    </form>
+                </div>
+                <span class="sidebar-version">ZK4 PRODUCTION <span>WORKSPACE / 01</span></span>
+            </div>
+        </aside>
+        <button class="nav-backdrop" data-nav-close aria-label="Zavřít navigaci" hidden></button>
+        {% endif %}
+        <div class="app-shell">
+            {% if user.is_authenticated %}
+            <header class="topbar">
+                <div class="breadcrumbs"><button class="icon-button mobile-menu" data-nav-toggle aria-controls="workspace-nav" aria-expanded="false" aria-label="Otevřít navigaci">{% icon 'menu' %}</button><span>Workspace</span>{% icon 'right' %}<strong>{% block breadcrumb %}Moje akce{% endblock %}</strong>
+                </div>
+                <div class="topbar-meta"><span class="online-dot"></span> ZK4 Production <span class="topbar-date">{{ today|date:"d. m. Y" }}</span>
+                </div>
+            </header>
+            {% endif %}
+
+            <main id="main-content" class="main-content">
+                {% for message in messages %}
+                <div class="notice" role="status">{% icon 'info' %}{{ message }}
+                </div>
+                {% endfor %}
+                {% block content %}{% endblock %}
+                {% if user.is_authenticated %}
+                <footer class="page-footer"><span>© {% now 'Y' %} ZK4 Production</span><span>Tvůj prostor pro skvělé akce.<span class="footer-dot"></span></span>
+                </footer>
+                {% endif %}
+
+            </main>
         </div>
-    </header>
-
-    <div class="container">
-        {% block content %}
-        {% endblock %}
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    {% block extra_js %}{% endblock %}
-
-</body>
+        {% block extra_js %}{% endblock %}
+    </body>
 </html>

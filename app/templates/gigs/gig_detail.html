@@ -1,318 +1,219 @@
-{% extends 'base.html' %}
-
+{% extends 'base.html' %}{% load ui %}
 {% block title %}{{ gig.name }} | ZK4 Production{% endblock %}
-
-{% block extra_css %}
-<style>
-.custom-divider {
-    display: flex;
-    align-items: center;
-    width: 80%;
-}
-
-.custom-divider hr {
-    flex: 1;
-    margin: 0;
-    border: 0;
-    border-top: 2px solid rgba(100, 116, 139, 0.35);
-    opacity: 1;
-}
-
-.custom-divider-dot {
-    width: 8px;
-    height: 8px;
-    margin: 0 1.25rem;
-    border-radius: 50%;
-    background: #64748b;
-    box-shadow: 0 0 0 4px rgba(100, 116, 139, 0.15);
-    flex-shrink: 0;
-}
-</style>
-{% endblock %}
-
+{% block breadcrumb %}Detail akce{% endblock %}
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="display-4 fw-bolder text-dark mb-1">{{ gig.name }}</h1>
-            <p class="text-secondary fs-5 mb-0">
-                <i class="bi bi-person-fill me-1"></i> <strong>{{ gig.client.name }}</strong> &nbsp;|&nbsp; 
-                <i class="bi bi-calendar3 me-1"></i> {{ gig.date|date:"d. m. Y" }}
-            </p>
-        </div>
-        <div class="d-flex flex-wrap gap-2 justify-content-md-end mt-3 mt-md-0">
-            <a href="{% url 'gig_update' gig.id %}" class="btn btn-warning rounded-pill px-4 shadow-sm text-dark fw-bold">
-                <i class="bi bi-pencil-fill me-2"></i>Upravit
-            </a>
-            
-            <a href="{% url 'save_invoice' gig.id %}" class="btn btn-success rounded-pill px-4 shadow-sm" title="Uloží fakturu v aktuálním stavu">
-                <i class="bi bi-floppy-fill me-2"></i>Uložit
-            </a>
-            
-            <a href="{% url 'gig_list' %}" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
-                <i class="bi bi-arrow-left me-2"></i>Zpět
-            </a>
+<a class="back-link" href="{% url 'gig_list' %}">{% icon 'left' %}Všechny akce</a>
+<div class="page-heading detail-heading">
+    <div><p class="eyebrow">DETAIL PRODUKCE</p><h1>{{ gig.name }}</h1>
+        <div class="detail-meta"><span>{% icon 'users' %}{{ gig.client.name|default:'Bez klienta' }}</span><span>{% icon 'calendar' %}{{ gig.date|date:'d. m. Y' }}</span>{% include 'components/status.html' %}
         </div>
     </div>
-
-    <div class="row g-4 mb-5">
-        <div class="col-md-4">
-            <div class="card bg-primary text-white shadow rounded-4 border-0 h-100 hover-lift">
-                <div class="card-body text-center py-4">
-                    <p class="text-uppercase fw-bold mb-1 opacity-75 letter-spacing-1">Práce</p>
-                    <h2 class="display-6 fw-bold mb-0">{{ gig.get_total_work_price|floatformat:0 }} Kč</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-secondary text-white shadow rounded-4 border-0 h-100 hover-lift">
-                <div class="card-body text-center py-4">
-                    <p class="text-uppercase fw-bold mb-1 opacity-75 letter-spacing-1">Technika</p>
-                    <h2 class="display-6 fw-bold mb-0">{{ gig.get_total_equipment_price|floatformat:0 }} Kč</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-info text-white shadow rounded-4 border-0 h-100 hover-lift">
-                <div class="card-body text-center py-4">
-                    <p class="text-uppercase fw-bold mb-1 opacity-75 letter-spacing-1">Ostatní</p>
-                    <h2 class="display-6 fw-bold mb-0">{{ gig.get_total_custom_items_price|floatformat:0 }} Kč</h2>
-                </div>
-            </div>
-        </div>
+    <div class="heading-actions"><a href="{% url 'gig_calendar_export' gig.id %}" class="button button-quiet" aria-label="Stáhnout událost do kalendáře" title="Stáhnout událost do kalendáře">{% icon 'calendar' %}</a><a href="{% url 'gig_update' gig.id %}" class="button button-secondary">{% icon 'edit' %}Upravit</a><a href="{% url 'save_invoice' gig.id %}" class="button button-primary">{% icon 'file' %}Vystavit fakturu</a>
     </div>
-
-    <div class="row g-4 mb-5">
-        <div class="col-12">
-            <div class="card bg-success text-white shadow rounded-4 border-0 h-100 hover-lift">
-                <div class="card-body text-center py-4">
-                    <p class="text-uppercase fw-bold mb-1 opacity-75 letter-spacing-1">Celkem k fakturaci</p>
-                    <h2 class="display-5 fw-bolder mb-0">{{ gig.get_total_price|floatformat:0 }} Kč</h2>
-                </div>
-            </div>
-        </div>
-    </div>
-
-<div class="custom-divider my-5">
-    <hr>
 </div>
-
-    <div class="row g-4">
-        <div class="col-lg-7">
-            <div class="card shadow-sm rounded-4 border-0 h-100 overflow-hidden">
-                <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center border-0">
-                    <h5 class="card-title mb-0 fw-bold"><i class="bi bi-clock-history me-2"></i>Odpracovaný čas</h5>
-                    <a href="{% url 'workphase_create' gig.id %}" class="btn btn-sm btn-light text-primary rounded-pill fw-bold px-3 shadow-sm">
-                        <i class="bi bi-plus-lg me-1"></i> Přidat fázi
-                    </a>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-4">Fáze</th>
-                                    <th>Od - Do</th>
-                                    <th>Hodiny</th>
-                                    <th>Sazba</th>
-                                    <th>Cena</th>
-                                    <th class="text-end pe-4">Akce</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for phase in phases %}
-                                <tr>
-                                    <td class="ps-4 fw-medium">{{ phase.get_phase_display }}</td>
-                                    <td>{{ phase.start_time|date:"H:i" }} - {{ phase.end_time|date:"H:i" }}</td>
-                                    <td>{{ phase.get_duration_hours|floatformat:1 }} h</td>
-                                    <td class="text-muted">{{ phase.hourly_rate }} Kč</td>
-                                    <td><strong>{{ phase.get_price|floatformat:0 }} Kč</strong></td>
-                                    <td class="text-end pe-4">
-                                        <div class="btn-group shadow-sm">
-                                            <a href="{% url 'workphase_update' phase.id %}" class="btn btn-sm btn-outline-primary" title="Upravit">
-                                                <i class="bi bi-pencil-fill"></i>
-                                            </a>
-                                            <a href="{% url 'workphase_delete' phase.id %}" class="btn btn-sm btn-outline-danger" title="Smazat">
-                                                <i class="bi bi-trash3-fill"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted py-4">Zatím nebyly zadány žádné časy.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-5">
-            <div class="card shadow-sm rounded-4 border-0 h-100 overflow-hidden">
-                <div class="card-header bg-secondary text-white py-3 d-flex justify-content-between align-items-center border-0">
-                    <h5 class="card-title mb-0 fw-bold"><i class="bi bi-speaker me-2"></i>Pronájem techniky</h5>
-                    <a href="{% url 'gigequipment_create' gig.id %}" class="btn btn-sm btn-light text-secondary rounded-pill fw-bold px-3 shadow-sm">
-                        <i class="bi bi-plus-lg me-1"></i> Přidat techniku
-                    </a>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-4">Položka</th>
-                                    <th>Ks</th>
-                                    <th>Cena/ks</th>
-                                    <th>Celkem</th>
-                                    <th class="text-end pe-4">Akce</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for eq in equipment %}
-                                <tr>
-                                    <td class="ps-4 fw-medium">{{ eq.equipment.name }}</td>
-                                    <td>{{ eq.quantity }}</td>
-                                    <td class="text-muted">{{ eq.agreed_price|floatformat:0 }} Kč</td>
-                                    <td><strong>{{ eq.get_total_price|floatformat:0 }} Kč</strong></td>
-                                    <td class="text-end pe-4">
-                                        <a href="{% url 'gigequipment_delete' eq.id %}" class="btn btn-sm btn-outline-danger shadow-sm" title="Odebrat">
-                                            <i class="bi bi-x-lg"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">Zatím nebyla přidána žádná technika.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+<dl class="detail-summary">
+    <div><dt>{% icon 'clock' %}Odpracovaný čas</dt><dd>{{ gig.get_total_work_price|floatformat:0 }} <small>Kč</small></dd>
     </div>
-
-    {% if custom_items or True %}
-    <div class="row g-4 mt-2">
-        <div class="col-12">
-            <div class="card shadow-sm rounded-4 border-0 h-100 overflow-hidden">
-                <div class="card-header bg-info text-white py-3 d-flex justify-content-between align-items-center border-0">
-                    <h5 class="card-title mb-0 fw-bold"><i class="bi bi-receipt me-2"></i>Vlastní položky na faktuře</h5>
-                    <a href="{% url 'custom_invoice_item_create' gig.id %}" class="btn btn-sm btn-light text-info rounded-pill fw-bold px-3 shadow-sm">
-                        <i class="bi bi-plus-lg me-1"></i> Přidat položku
-                    </a>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-4">Popis</th>
-                                    <th class="text-center">Typ</th>
-                                    <th class="text-end">Cena/Sazba</th>
-                                    <th class="text-end">Celkem</th>
-                                    <th class="text-end pe-4">Akce</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in custom_items %}
-                                <tr>
-                                    <td class="ps-4 fw-medium">{{ item.description }}</td>
-                                    <td class="text-center">
-                                        {% if item.item_type == 'fixed' %}
-                                            <span class="badge bg-info">Fixní</span>
-                                        {% else %}
-                                            <span class="badge bg-warning">Hodinová</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-end">
-                                        {% if item.item_type == 'fixed' %}
-                                            {{ item.fixed_price|floatformat:0 }} Kč
-                                        {% else %}
-                                            {{ item.quantity|floatformat:1 }} h × {{ item.unit_price|floatformat:0 }} Kč/h
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-end"><strong>{{ item.get_total_price|floatformat:0 }} Kč</strong></td>
-                                    <td class="text-end pe-4">
-                                        <div class="btn-group shadow-sm">
-                                            <a href="{% url 'custom_invoice_item_update' item.id %}" class="btn btn-sm btn-outline-primary" title="Upravit">
-                                                <i class="bi bi-pencil-fill"></i>
-                                            </a>
-                                            <a href="{% url 'custom_invoice_item_delete' item.id %}" class="btn btn-sm btn-outline-danger" title="Smazat">
-                                                <i class="bi bi-trash3-fill"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">Zatím nebyly přidány žádné vlastní položky.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div><dt>{% icon 'speaker' %}Pronájem techniky</dt><dd>{{ gig.get_total_equipment_price|floatformat:0 }} <small>Kč</small></dd>
     </div>
-    {% endif %}
-
-    {% if invoice_snapshots %}
-    <div class="custom-divider my-5">
-    <hr>
-</div>
-    <div class="card shadow-sm rounded-4 border-0 overflow-hidden mt-2">
-        <div class="card-header bg-dark text-light py-3 d-flex justify-content-between align-items-center border-0">
-            <h5 class="card-title mb-0 fw-bold"><i class="bi bi-file-earmark-check me-2"></i>Uložené faktury</h5>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="ps-4">Datum uložení</th>
-                            <th class="text-end">Práce</th>
-                            <th class="text-end">Technika</th>
-                            <th class="text-end">Ostatní</th>
-                            <th class="text-end">Celkem</th>
-                            <th class="text-end pe-4" style="width: 140px;">Akce</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for snapshot in invoice_snapshots %}
-                        <tr>
-                            <td class="ps-4">
-                                {{ snapshot.created_at|date:"d. m. Y H:i" }}
-                                {% if snapshot.invoice_number %}<div class="small text-muted">Č. {{ snapshot.invoice_number }}</div>{% endif %}
-                                <div class="small text-muted">{{ snapshot.get_payment_method_display }}{% if snapshot.payment_date %}, {{ snapshot.payment_date|date:"d. m. Y" }}{% endif %}</div>
-                            </td>
-                            <td class="text-end text-muted">{{ snapshot.total_work_price|floatformat:0 }} Kč</td>
-                            <td class="text-end text-muted">{{ snapshot.total_equipment_price|floatformat:0 }} Kč</td>
-                            <td class="text-end text-muted">{{ snapshot.total_custom_items_price|floatformat:0 }} Kč</td>
-                            <td class="text-end">
-                                <strong class="text-dark">{{ snapshot.total_price|floatformat:0 }} Kč</strong>
-                            </td>
-                            <td class="text-end pe-4">
-                                <div class="btn-group shadow-sm">
-                                    <a href="{% url 'snapshot_pdf' snapshot.id %}" class="btn btn-sm btn-outline-primary" title="Stáhnout PDF">
-                                        <i class="bi bi-file-earmark-pdf-fill"></i>
-                                    </a>
-                                    <a href="{% url 'delete_snapshot' snapshot.id %}" class="btn btn-sm btn-outline-danger" title="Smazat">
-                                        <i class="bi bi-trash3-fill"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div><dt>{% icon 'file' %}Ostatní položky</dt><dd>{{ gig.get_total_custom_items_price|floatformat:0 }} <small>Kč</small></dd>
     </div>
-    {% endif %}
-</div>
+    <div><dt>Celkem k fakturaci</dt><dd>{{ gig.get_total_price|floatformat:0 }} <small>Kč</small></dd>
+    </div>
+</dl>
+{% if gig.notes %}
+<section class="panel notes-panel"><h2>Poznámky k akci</h2><p>{{ gig.notes }}</p>
+</section>
+{% endif %}
+<section class="panel detail-section">
+    <div class="panel-heading"><h2>Odpracovaný čas <span class="count">{{ phases|length }}</span></h2><a class="button button-small button-secondary" href="{% url 'workphase_create' gig.id %}">{% icon 'plus' %}Přidat fázi</a>
+    </div>
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th scope="col">Pracovní fáze
+                    </th>
+                    <th scope="col">Od — do
+                    </th>
+                    <th scope="col">Hodiny
+                    </th>
+                    <th scope="col">Sazba
+                    </th>
+                    <th scope="col" class="align-right">Cena
+                    </th>
+                    <th scope="col" class="align-right">Akce
+                    </th>
+                </tr>
+            </thead>
+            <tbody>{% for phase in phases %}
+                <tr>
+                    <td><strong>{{ phase.get_phase_display }}</strong>
+                    </td>
+                    <td class="numeric">{{ phase.start_time|date:'d. m. H:i' }} — {{ phase.end_time|date:'d. m. H:i' }}
+                    </td>
+                    <td>{{ phase.get_duration_hours|floatformat:1 }} h
+                    </td>
+                    <td class="muted">{{ phase.hourly_rate }} Kč/h
+                    </td>
+                    <td class="align-right numeric"><strong>{{ phase.get_price|floatformat:0 }} Kč</strong>
+                    </td>
+                    <td>
+                        <div class="table-actions"><a class="icon-button" href="{% url 'workphase_update' phase.id %}" aria-label="Upravit fázi {{ phase.get_phase_display }}">{% icon 'edit' %}</a><a class="icon-button danger-link" href="{% url 'workphase_delete' phase.id %}" aria-label="Smazat fázi {{ phase.get_phase_display }}">{% icon 'trash' %}</a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">{% icon 'clock' %}<h3>Čas je na tvé straně</h3><p>Přidej první pracovní fázi a spočítáme odměnu.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+<section class="panel detail-section">
+    <div class="panel-heading"><h2>Pronájem techniky <span class="count">{{ equipment|length }}</span></h2><a class="button button-small button-secondary" href="{% url 'gigequipment_create' gig.id %}">{% icon 'plus' %}Přidat techniku</a>
+    </div>
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th scope="col">Vybavení
+                    </th>
+                    <th scope="col">Počet
+                    </th>
+                    <th scope="col">Jednotková cena
+                    </th>
+                    <th scope="col" class="align-right">Celkem
+                    </th>
+                    <th scope="col" class="align-right">Akce
+                    </th>
+                </tr>
+            </thead>
+            <tbody>{% for eq in equipment %}
+                <tr>
+                    <td><strong>{{ eq.equipment.name }}</strong>
+                    </td>
+                    <td>{{ eq.quantity }}
+                    </td>
+                    <td class="muted numeric">{{ eq.agreed_price|floatformat:0 }} Kč
+                    </td>
+                    <td class="align-right numeric"><strong>{{ eq.get_total_price|floatformat:0 }} Kč</strong>
+                    </td>
+                    <td>
+                        <div class="table-actions"><a class="icon-button danger-link" href="{% url 'gigequipment_delete' eq.id %}" aria-label="Odebrat {{ eq.equipment.name }}">{% icon 'trash' %}</a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">
+                        <div class="empty-state">{% icon 'speaker' %}<h3>Jakou techniku bereš s sebou?</h3><p>Přidej vybavení a jeho cenu do této akce.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+<section class="panel detail-section">
+    <div class="panel-heading"><h2>Vlastní položky <span class="count">{{ custom_items|length }}</span></h2><a class="button button-small button-secondary" href="{% url 'custom_invoice_item_create' gig.id %}">{% icon 'plus' %}Přidat položku</a>
+    </div>
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th scope="col">Popis položky
+                    </th>
+                    <th scope="col">Typ
+                    </th>
+                    <th scope="col">Cena / sazba
+                    </th>
+                    <th scope="col" class="align-right">Celkem
+                    </th>
+                    <th scope="col" class="align-right">Akce
+                    </th>
+                </tr>
+            </thead>
+            <tbody>{% for item in custom_items %}
+                <tr>
+                    <td><strong>{{ item.description }}</strong>
+                    </td>
+                    <td class="muted">{{ item.get_item_type_display }}
+                    </td>
+                    <td class="muted numeric">{% if item.item_type == 'fixed' %}{{ item.fixed_price|floatformat:0 }} Kč{% else %}{{ item.quantity|floatformat:1 }} h × {{ item.unit_price|floatformat:0 }} Kč/h{% endif %}
+                    </td>
+                    <td class="align-right numeric"><strong>{{ item.get_total_price|floatformat:0 }} Kč</strong>
+                    </td>
+                    <td>
+                        <div class="table-actions"><a class="icon-button" href="{% url 'custom_invoice_item_update' item.id %}" aria-label="Upravit {{ item.description }}">{% icon 'edit' %}</a><a class="icon-button danger-link" href="{% url 'custom_invoice_item_delete' item.id %}" aria-label="Smazat {{ item.description }}">{% icon 'trash' %}</a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">
+                        <div class="empty-state">{% icon 'file' %}<h3>Ještě něco navíc?</h3><p>Doprava, palivo nebo další služby patří sem.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% if invoice_snapshots %}
+<section class="panel detail-section">
+    <div class="panel-heading"><h2>Uložené faktury <span class="count">{{ invoice_snapshots|length }}</span></h2><span class="muted small">Archiv vystavených dokladů</span>
+    </div>
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th scope="col">Faktura / uloženo
+                    </th>
+                    <th scope="col">Úhrada
+                    </th>
+                    <th scope="col" class="align-right">Práce
+                    </th>
+                    <th scope="col" class="align-right">Technika
+                    </th>
+                    <th scope="col" class="align-right">Ostatní
+                    </th>
+                    <th scope="col" class="align-right">Celkem
+                    </th>
+                    <th scope="col" class="align-right">Akce
+                    </th>
+                </tr>
+            </thead>
+            <tbody>{% for snapshot in invoice_snapshots %}
+                <tr>
+                    <td><strong>{{ snapshot.invoice_number|default:'Faktura' }}</strong><span class="table-subtitle">{{ snapshot.created_at|date:'d. m. Y H:i' }}</span>
+                    </td>
+                    <td>{{ snapshot.get_payment_method_display }}{% if snapshot.payment_date %}<span class="table-subtitle">{{ snapshot.payment_date|date:'d. m. Y' }}</span>{% elif snapshot.due_date %}<span class="table-subtitle">Splatnost {{ snapshot.due_date|date:'d. m. Y' }}</span>{% endif %}
+                    </td>
+                    <td class="align-right muted numeric">{{ snapshot.total_work_price|floatformat:0 }} Kč
+                    </td>
+                    <td class="align-right muted numeric">{{ snapshot.total_equipment_price|floatformat:0 }} Kč
+                    </td>
+                    <td class="align-right muted numeric">{{ snapshot.total_custom_items_price|floatformat:0 }} Kč
+                    </td>
+                    <td class="align-right numeric"><strong>{{ snapshot.total_price|floatformat:0 }} Kč</strong>
+                    </td>
+                    <td>
+                        <div class="table-actions"><a class="icon-button" href="{% url 'snapshot_pdf' snapshot.id %}" aria-label="Otevřít fakturu {{ snapshot.invoice_number }} pro tisk">{% icon 'download' %}</a><a class="icon-button danger-link" href="{% url 'delete_snapshot' snapshot.id %}" aria-label="Smazat fakturu {{ snapshot.invoice_number }}">{% icon 'trash' %}</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
 {% endblock %}

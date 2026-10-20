@@ -1,18 +1,16 @@
-{% extends 'base.html' %}
-
-{% block title %}Odebrat fázi | ZK4 Production{% endblock %}
-
+{% extends 'base.html' %}{% load ui %}
+{% block title %}Odebrat pracovní fázi? | ZK4 Production{% endblock %}
+{% block breadcrumb %}Potvrzení smazání{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-        <div class="alert alert-danger text-center shadow-sm rounded-4">
-        <h3 class="mb-4">Opravdu smazat fázi "{{ phase.get_phase_display }}"?</h3>
-        <form method="post">
-            {% csrf_token %}
-            <a href="{% url 'gig_detail' phase.gig.id %}" class="btn btn-secondary rounded-pill px-4">Zrušit</a>
-            <button type="submit" class="btn btn-danger rounded-pill px-4">Ano, smazat</button>
+<div class="form-page"><a href="{% url 'gig_detail' phase.gig.id %}" class="back-link">{% icon 'left' %}Zpět</a>
+    <div class="panel confirm-panel">
+        <div class="confirm-icon">{% icon 'trash' %}
+        </div>
+        <h1>Odebrat pracovní fázi?</h1><p><strong>{{ phase.get_phase_display }}</strong></p><p>Pracovní fáze bude trvale odebrána z akce.</p>
+        <form method="post">{% csrf_token %}
+            <div class="form-actions"><a href="{% url 'gig_detail' phase.gig.id %}" class="button button-quiet">Zrušit</a><button class="button button-danger" type="submit">{% icon 'trash' %}Ano, smazat</button>
+            </div>
         </form>
-    </div>
     </div>
 </div>
 {% endblock %}

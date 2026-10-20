@@ -175,12 +175,17 @@ def calendar_subscription(request, token=None):
 @login_required
 def gig_list(request):
     """Výpis akcí - jen ty, které vytvořil přihlášený uživatel."""
-    gigs = Gig.objects.filter(author=request.user).order_by('-date')
+    user_gigs = Gig.objects.filter(author=request.user)
+    gigs = user_gigs.select_related('client').order_by('-date', '-id')
 
     status_filter = request.GET.get('status')
     client_filter = request.GET.get('client')
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
+    search_query = request.GET.get('q', '').strip()
+
+    if search_query:
+        gigs = gigs.filter(Q(name__icontains=search_query) | Q(client__name__icontains=search_query))
 
     if status_filter:
         gigs = gigs.filter(status=status_filter)
@@ -214,6 +219,9 @@ def gig_list(request):
         month = today.month
         year = today.year
 
+    if not 1 <= month <= 12 or not 2 <= year <= 9998:
+        month, year = today.month, today.year
+
     czech_months = {
         1: 'Leden', 2: 'Únor', 3: 'Březen', 4: 'Duben',
         5: 'Květen', 6: 'Červen', 7: 'Červenec', 8: 'Srpen',
@@ -229,9 +237,10 @@ def gig_list(request):
     month_weeks = []
     for week in cal.monthdayscalendar(year, month):
         week_days = []
-        for day in week:
+        for weekday, day in enumerate(week):
             week_days.append({
                 'day': day,
+                'weekday': ('Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle')[weekday],
                 'gigs': gigs_by_day.get(day, []) if day else [],
             })
         month_weeks.append(week_days)
@@ -254,6 +263,15 @@ def gig_list(request):
 
     context = {
         'gigs': gigs,
+        'search_query': search_query,
+        'status_choices': Gig.STATUS_CHOICES,
+        'upcoming_gigs': gigs.filter(date__gte=today).order_by('date', 'id')[:4],
+        'dashboard_stats': [
+            {'label': 'Všechny akce', 'count': user_gigs.count(), 'status': '', 'icon': 'calendar', 'caption': 'v tvém pracovním prostoru'},
+            {'label': 'V plánu', 'count': user_gigs.filter(status='planned').count(), 'status': 'planned', 'icon': 'clock', 'caption': 'čeká na svůj moment'},
+            {'label': 'Probíhá', 'count': user_gigs.filter(status='ongoing').count(), 'status': 'ongoing', 'icon': 'speaker', 'caption': 'právě v produkci'},
+            {'label': 'Zaplaceno', 'count': user_gigs.filter(status='paid').count(), 'status': 'paid', 'icon': 'check', 'caption': 'úspěšně uzavřeno'},
+        ],
         'current_status': status_filter,
         'current_client': client_filter,
         'date_from': date_from,

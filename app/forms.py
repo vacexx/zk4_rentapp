@@ -6,11 +6,11 @@ class GigForm(forms.ModelForm):
         model = Gig
         fields = ['name', 'date', 'client', 'status', 'notes']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'client': forms.Select(attrs={'class': 'form-select'}),
-            'status': forms.Select(attrs={'class': 'form-select'}),
-            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'name': forms.TextInput(attrs={'class': 'field-input'}),
+            'date': forms.DateInput(attrs={'class': 'field-input', 'type': 'date'}),
+            'client': forms.Select(attrs={'class': 'field-select'}),
+            'status': forms.Select(attrs={'class': 'field-select'}),
+            'notes': forms.Textarea(attrs={'class': 'field-input', 'rows': 3}),
         }
 
 class WorkPhaseForm(forms.ModelForm):
@@ -18,10 +18,10 @@ class WorkPhaseForm(forms.ModelForm):
         model = WorkPhase
         fields = ['phase', 'start_time', 'end_time', 'hourly_rate']
         widgets = {
-            'phase': forms.Select(attrs={'class': 'form-select'}),
-            'start_time': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
-            'end_time': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
-            'hourly_rate': forms.Select(attrs={'class': 'form-select'}),
+            'phase': forms.Select(attrs={'class': 'field-select'}),
+            'start_time': forms.DateTimeInput(attrs={'class': 'field-input', 'type': 'datetime-local'}),
+            'end_time': forms.DateTimeInput(attrs={'class': 'field-input', 'type': 'datetime-local'}),
+            'hourly_rate': forms.Select(attrs={'class': 'field-select'}),
         }
 
 class GigEquipmentForm(forms.ModelForm):
@@ -29,8 +29,8 @@ class GigEquipmentForm(forms.ModelForm):
         model = GigEquipment
         fields = ['equipment', 'quantity']
         widgets = {
-            'equipment': forms.Select(attrs={'class': 'form-select'}),
-            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'equipment': forms.Select(attrs={'class': 'field-select'}),
+            'quantity': forms.NumberInput(attrs={'class': 'field-input', 'min': 1}),
         }
         labels = {
             'equipment': 'Vybavení',
@@ -42,11 +42,11 @@ class ClientForm(forms.ModelForm):
         model = Client
         fields = ['name', 'ico', 'email', 'phone', 'notes']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Název firmy nebo jméno'}),
-            'ico': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'IČO klienta'}),
-            'email': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Telefon'}),
-            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Interní poznámky...'}),
+            'name': forms.TextInput(attrs={'class': 'field-input', 'placeholder': 'Název firmy nebo jméno'}),
+            'ico': forms.TextInput(attrs={'class': 'field-input', 'placeholder': 'IČO klienta'}),
+            'email': forms.TextInput(attrs={'class': 'field-input', 'placeholder': 'Email'}),
+            'phone': forms.TextInput(attrs={'class': 'field-input', 'placeholder': 'Telefon'}),
+            'notes': forms.Textarea(attrs={'class': 'field-input', 'rows': 2, 'placeholder': 'Interní poznámky...'}),
         }
 
 class CustomInvoiceItemForm(forms.ModelForm):
@@ -54,11 +54,11 @@ class CustomInvoiceItemForm(forms.ModelForm):
         model = CustomInvoiceItem
         fields = ['item_type', 'description', 'fixed_price', 'quantity', 'unit_price']
         widgets = {
-            'item_type': forms.RadioSelect(attrs={'class': 'form-check-input'}),
-            'description': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Popis (např. "Cesta + palivo")'}),
-            'fixed_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': '500'}),
-            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0.01', 'placeholder': 'Počet hodin'}),
-            'unit_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': 'Cena za hodinu'}),
+            'item_type': forms.RadioSelect(attrs={'class': 'field-radio'}),
+            'description': forms.TextInput(attrs={'class': 'field-input', 'placeholder': 'Popis (např. "Cesta + palivo")'}),
+            'fixed_price': forms.NumberInput(attrs={'class': 'field-input', 'step': '0.01', 'min': '0', 'placeholder': '500'}),
+            'quantity': forms.NumberInput(attrs={'class': 'field-input', 'step': '0.01', 'min': '0.01', 'placeholder': 'Počet hodin'}),
+            'unit_price': forms.NumberInput(attrs={'class': 'field-input', 'step': '0.01', 'min': '0', 'placeholder': 'Cena za hodinu'}),
         }
         labels = {
             'item_type': 'Typ položky',
@@ -72,17 +72,17 @@ class InvoicePaymentForm(forms.Form):
     payment_method = forms.ChoiceField(
         choices=InvoiceSnapshot.PAYMENT_METHOD_CHOICES,
         label='Stav úhrady',
-        widget=forms.Select(attrs={'class': 'form-select'}),
+        widget=forms.Select(attrs={'class': 'field-select'}),
     )
     payment_date = forms.DateField(
         required=False,
         label='Datum úhrady',
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        widget=forms.DateInput(attrs={'class': 'field-input', 'type': 'date'}),
     )
     due_date = forms.DateField(
         required=False,
         label='Datum splatnosti',
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        widget=forms.DateInput(attrs={'class': 'field-input', 'type': 'date'}),
     )
 
     def clean(self):

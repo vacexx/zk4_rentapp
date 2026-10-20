@@ -3,75 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <title>Faktura | {{ gig.name }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background: #f0f0f0; padding: 50px 0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
-        
-        .invoice-box {
-            max-width: 800px;
-            margin: auto;
-            padding: 30px;
-            border: 1px solid #eee;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
-            background: #fff;
-            color: #555;
-            min-height: 297mm;
-        }
-
-        .invoice-header { border-bottom: 2px solid #333; margin-bottom: 20px; padding-bottom: 20px; }
-        .section-title { background: #f8f9fa; padding: 5px 10px; font-weight: bold; border-left: 4px solid #333; margin: 20px 0 10px 0; }
-        
-        @media print {
-            body { background: none; padding: 0; }
-            .invoice-box { box-shadow: none; border: none; max-width: 100%; width: 100%; margin: 0; padding: 0; }
-            .no-print { display: none; }
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'app/invoice.css' %}">
 </head>
 <body>
 {% load date_extras %}
 
-<div class="no-print text-center mb-4">
-    <button onclick="window.print()" class="btn btn-dark btn-lg px-5">💾 Uložit jako PDF / Tisknout</button>
-    <a href="{% url 'gig_detail' gig.id %}" class="btn btn-outline-secondary btn-lg ms-2">Zpět</a>
+<div class="no-print invoice-center space-after">
+    <button onclick="window.print()" class="print-button print-primary print-large print-wide">💾 Uložit jako PDF / Tisknout</button>
+    <a href="{% url 'gig_detail' gig.id %}" class="print-button print-secondary print-large print-offset">Zpět</a>
 </div>
 
 <div class="invoice-box">
-    <div class="invoice-header d-flex justify-content-between align-items-center">
+    <div class="invoice-header invoice-flex invoice-between invoice-align">
         <div>
-            <h1 class="fw-bold mb-0">FAKTURA / VÝKAZ</h1>
-            <p class="text-muted mb-0">Variabilní symbol: {{ gig.date|date:"Ymd" }}{{ gig.id }} | Zakázka: {{ gig.name }}</p>
-            <p class="text-muted">Datum provedení zakázky: {{ gig.date|date:"d. m. Y" }}</p>
+            <h1 class="invoice-bold no-bottom">FAKTURA / VÝKAZ</h1>
+            <p class="invoice-muted no-bottom">Variabilní symbol: {{ gig.date|date:"Ymd" }}{{ gig.id }} | Zakázka: {{ gig.name }}</p>
+            <p class="invoice-muted">Datum provedení zakázky: {{ gig.date|date:"d. m. Y" }}</p>
         </div>
-        <div class="text-end">
-            <h6 class="mb-0">Datum vystavení:</h6>
+        <div class="invoice-right">
+            <h6 class="no-bottom">Datum vystavení:</h6>
             <p>{{ today|date:"d. m. Y" }}</p>
-            <h6 class="mb-0">Datum splatnosti:</h6>
+            <h6 class="no-bottom">Datum splatnosti:</h6>
             <p>{{ today|add_days:14|date:"d. m. Y" }}</p>
         </div>
     </div>
 
-    <div class="row mt-4">
-        <div class="col-6">
-            <h5 class="fw-bold">Dodavatel:</h5>
-            <p class="mb-0 text-dark fs-5"><strong>{{ gig.author.profile.name }}</strong></p>
-            <p class="mb-0">{{ gig.author.profile.address }}</p>
-            <p class="mb-0">IČO: {{ gig.author.profile.ico }}</p>
-            <p class="mb-0">Číslo účtu: {{ gig.author.profile.bank_account_alt }}</p>
-            <p class="mb-0">E-mail: {{ gig.author.profile.email }}</p>
-            <p class="mb-0">Telefon: {{ gig.author.profile.phone }}</p>
+    <div class="invoice-columns space-before">
+        <div class="invoice-half">
+            <h5 class="invoice-bold">Dodavatel:</h5>
+            <p class="no-bottom invoice-ink invoice-emphasis"><strong>{{ gig.author.profile.name }}</strong></p>
+            <p class="no-bottom">{{ gig.author.profile.address }}</p>
+            <p class="no-bottom">IČO: {{ gig.author.profile.ico }}</p>
+            <p class="no-bottom">Číslo účtu: {{ gig.author.profile.bank_account_alt }}</p>
+            <p class="no-bottom">E-mail: {{ gig.author.profile.email }}</p>
+            <p class="no-bottom">Telefon: {{ gig.author.profile.phone }}</p>
         </div>
-        <div class="col-6 text-end text-sm-start ps-5 border-start">
-            <h5 class="fw-bold text-end text-sm-start">Odběratel:</h5>
-            <p class="mb-0 text-dark fs-5"><strong>{{ gig.client.name }}</strong></p>
-            <p class="mb-0">{{ gig.client.address }}</p>
-            
+        <div class="invoice-half invoice-right invoice-client-align invoice-client-padding invoice-client-border">
+            <h5 class="invoice-bold invoice-right invoice-client-align">Odběratel:</h5>
+            <p class="no-bottom invoice-ink invoice-emphasis"><strong>{{ gig.client.name }}</strong></p>
+            <p class="no-bottom">{{ gig.client.address }}</p>
+
             {% if gig.client.ico %}
-                <p class="mb-0">IČO: {{ gig.client.ico }}</p>
+                <p class="no-bottom">IČO: {{ gig.client.ico }}</p>
             {% endif %}
-            
+
             {% if gig.client.email or gig.client.phone %}
-                <p class="mb-0">
+                <p class="no-bottom">
                     {% if gig.client.email %}{{ gig.client.email }}{% endif %}
                     {% if gig.client.email and gig.client.phone %} | {% endif %}
                     {% if gig.client.phone %}{{ gig.client.phone }}{% endif %}
@@ -82,22 +61,22 @@
 
     {% if phases %}
     <div class="section-title">ODPRACOVANÝ ČAS</div>
-    <table class="table table-sm border-bottom">
+    <table class="invoice-table invoice-table-compact invoice-rule">
         <thead>
             <tr>
                 <th>Popis (fáze)</th>
-                <th class="text-center">Doba trvání</th>
-                <th class="text-end">Sazba</th>
-                <th class="text-end">Celkem</th>
+                <th class="invoice-center">Doba trvání</th>
+                <th class="invoice-right">Sazba</th>
+                <th class="invoice-right">Celkem</th>
             </tr>
         </thead>
         <tbody>
             {% for phase in phases %}
             <tr>
                 <td>{{ phase.get_phase_display }} ({{ phase.start_time|date:"H:i" }} - {{ phase.end_time|date:"H:i" }})</td>
-                <td class="text-center">{{ phase.get_duration_hours|floatformat:1 }} h</td>
-                <td class="text-end">{{ phase.hourly_rate }} Kč/h</td>
-                <td class="text-end">{{ phase.get_price|floatformat:0 }} Kč</td>
+                <td class="invoice-center">{{ phase.get_duration_hours|floatformat:1 }} h</td>
+                <td class="invoice-right">{{ phase.hourly_rate }} Kč/h</td>
+                <td class="invoice-right">{{ phase.get_price|floatformat:0 }} Kč</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -106,22 +85,22 @@
 
     {% if equipment %}
     <div class="section-title">PRONAJATÁ TECHNIKA</div>
-    <table class="table table-sm border-bottom">
+    <table class="invoice-table invoice-table-compact invoice-rule">
         <thead>
             <tr>
                 <th>Položka</th>
-                <th class="text-center">Množství</th>
-                <th class="text-end">Cena/ks</th>
-                <th class="text-end">Celkem</th>
+                <th class="invoice-center">Množství</th>
+                <th class="invoice-right">Cena/ks</th>
+                <th class="invoice-right">Celkem</th>
             </tr>
         </thead>
         <tbody>
             {% for eq in equipment %}
             <tr>
                 <td>{{ eq.equipment.name }}</td>
-                <td class="text-center">{{ eq.quantity }} ks</td>
-                <td class="text-end">{{ eq.agreed_price|floatformat:0 }} Kč</td>
-                <td class="text-end">{{ eq.get_total_price|floatformat:0 }} Kč</td>
+                <td class="invoice-center">{{ eq.quantity }} ks</td>
+                <td class="invoice-right">{{ eq.agreed_price|floatformat:0 }} Kč</td>
+                <td class="invoice-right">{{ eq.get_total_price|floatformat:0 }} Kč</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -130,54 +109,54 @@
 
     {% if custom_items %}
     <div class="section-title">OSTATNÍ POLOŽKY</div>
-    <table class="table table-sm border-bottom">
+    <table class="invoice-table invoice-table-compact invoice-rule">
         <thead>
             <tr>
                 <th>Popis</th>
-                <th class="text-center">Typ</th>
-                <th class="text-end">Cena/Sazba</th>
-                <th class="text-end">Celkem</th>
+                <th class="invoice-center">Typ</th>
+                <th class="invoice-right">Cena/Sazba</th>
+                <th class="invoice-right">Celkem</th>
             </tr>
         </thead>
         <tbody>
             {% for item in custom_items %}
             <tr>
                 <td>{{ item.description }}</td>
-                <td class="text-center">
+                <td class="invoice-center">
                     {% if item.item_type == 'fixed' %}
                         Fixní
                     {% else %}
                         Hodinová
                     {% endif %}
                 </td>
-                <td class="text-end">
+                <td class="invoice-right">
                     {% if item.item_type == 'fixed' %}
                         {{ item.fixed_price|floatformat:0 }} Kč
                     {% else %}
                         {{ item.quantity|floatformat:1 }} h × {{ item.unit_price|floatformat:0 }} Kč/h
                     {% endif %}
                 </td>
-                <td class="text-end">{{ item.get_total_price|floatformat:0 }} Kč</td>
+                <td class="invoice-right">{{ item.get_total_price|floatformat:0 }} Kč</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
     {% endif %}
 
-    <div class="row mt-5">
-        <div class="col-6">
-            <p class="small text-muted mb-1">Faktura slouží zároveň jako dodací list a potvrzení o vykonané práci. Nejsem plátcem DPH.</p>
-            <p class="small text-muted"><em>Fyzická osoba zapsaná v živnostenském rejstříku u Magistrátu města Opavy.</em></p>
+    <div class="invoice-columns invoice-totals">
+        <div class="invoice-half">
+            <p class="invoice-small invoice-muted invoice-note-gap">Faktura slouží zároveň jako dodací list a potvrzení o vykonané práci. Nejsem plátcem DPH.</p>
+            <p class="invoice-small invoice-muted"><em>Fyzická osoba zapsaná v živnostenském rejstříku u Magistrátu města Opavy.</em></p>
         </div>
-        <div class="col-6 text-end">
-            <p class="mb-0 fs-5">Celkem k úhradě:</p>
-            <h1 class="fw-bold text-dark">{{ gig.get_total_price|floatformat:0 }} Kč</h1>
-    
+        <div class="invoice-half invoice-right">
+            <p class="no-bottom invoice-emphasis">Celkem k úhradě:</p>
+            <h1 class="invoice-bold invoice-ink">{{ gig.get_total_price|floatformat:0 }} Kč</h1>
+
         {% if qr_url %}
-            <div class="d-flex justify-content-end mt-4">
-                <div class="text-center">
-                    <img src="{{ qr_url }}" alt="QR Platba" class="border p-1" style="width: 130px; height: 130px;">
-                    <p class="small text-muted mt-1 mb-0 fw-bold">QR Platba</p>
+            <div class="invoice-flex invoice-end space-before">
+                <div class="invoice-center">
+                    <img src="{{ qr_url }}" alt="QR Platba" class="qr-border qr-padding" style="width: 130px; height: 130px;">
+                    <p class="invoice-small invoice-muted qr-caption-gap no-bottom invoice-bold">QR Platba</p>
                 </div>
             </div>
          {% endif %}

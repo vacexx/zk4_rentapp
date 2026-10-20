@@ -1,36 +1,17 @@
-{% extends 'base.html' %}
-
+{% extends 'base.html' %}{% load ui %}
 {% block title %}{% if is_update %}Upravit akci{% else %}Nová akce{% endif %} | ZK4 Production{% endblock %}
-
+{% block breadcrumb %}{% if is_update %}Upravit akci{% else %}Nová akce{% endif %}{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-        <div class="card shadow-sm border-0 rounded-4">
-            <div class="card-body p-4">
-                <h2 class="fw-bold mb-4">{% if is_update %}
-                <i class="bi bi-pencil-square me-2"></i>Upravit akci
-            {% else %}
-                <i class="bi bi-plus-circle me-2"></i>Založit novou akci
-            {% endif %}</h2>
-                <form method="post">
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    
-                    <div class="mb-4">
-                        <small class="text-muted">Chybí klient v seznamu? 
-                            <a href="{% url 'client_create' %}" class="text-primary text-decoration-none fw-bold">
-                                + Přidat nového klienta
-                            </a>
-                        </small>
-                    </div>
-                    
-                    <div class="d-flex justify-content-between mt-4 pt-3 border-top text-end">
-                        <a href="{% url 'gig_list' %}" class="btn btn-outline-secondary rounded-pill px-4">Zpět</a>
-                        <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">{% if is_update %}Uložit změny{% else %}Vytvořit akci{% endif %}</button>
-                    </div>
-                </form>
-            </div>
+<div class="form-page"><a class="back-link" href="{% url 'gig_list' %}">{% icon 'left' %}Zpět</a>
+    <div class="page-heading">
+        <div><p class="eyebrow">ZK4 WORKSPACE</p><h1>{% if is_update %}Upravit akci{% else %}Nová akce{% endif %}</h1><p>Základní údaje, termín a klient. Začni tady.</p>
         </div>
+    </div>
+    <div class="panel form-panel">
+        <form method="post">{% csrf_token %}{% include 'components/fields.html' %}<p class="form-hint">Chybí klient v seznamu? <a href="{% url 'client_create' %}">Přidat nového klienta →</a></p>
+            <div class="form-actions"><a class="button button-quiet" href="{% url 'gig_list' %}">Zrušit</a><button class="button button-primary" type="submit">{% icon 'check' %}{% if is_update %}Uložit změny{% else %}Vytvořit akci{% endif %}</button>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}
