@@ -829,7 +829,8 @@ small,.small {
     border-bottom:1px solid var(--border);
     border-right:1px solid var(--border);
     padding:9px 6px;
-    position:relative
+    position:relative;
+    overflow:hidden
 }
 .calendar-table td:last-child {
     border-right:0
@@ -875,10 +876,17 @@ small,.small {
 }
 .day-events {
     display:grid;
+    grid-template-columns:minmax(0,1fr);
+    min-width:0;
+    max-width:100%;
     gap:4px
 }
 .calendar-event {
     display:flex;
+    min-width:0;
+    width:100%;
+    max-width:100%;
+    overflow:hidden;
     align-items:center;
     gap:4px;
     background:#85b5fa12;
@@ -890,6 +898,8 @@ small,.small {
     font-size:10px
 }
 .calendar-event>span:last-child {
+    flex:1;
+    min-width:0;
     overflow:hidden;
     white-space:nowrap;
     text-overflow:ellipsis
@@ -2080,6 +2090,97 @@ input[type=radio],input[type=checkbox] {
     }
     .login-panel {
         padding:27px
+    }
+}
+/* Comfortable reading sizes on desktop, including Full HD displays. */
+@media(min-width:1051px) {
+    body {
+        font-size:16px
+    }
+    h1 {
+        font-size:38px
+    }
+    .form-page h1,.login-panel h1 {
+        font-size:30px
+    }
+    .breadcrumbs,.topbar-meta,.workspace-switch,
+    .page-heading p:not(.eyebrow),.button,.button-small,.text-link,
+    .stat-top,.view-switch button,.filter-bar input,.filter-bar select,
+    .filter-bar>.button,.date-filters,.calendar-event,
+    .agenda-item-info>small,.quick-note p,.quick-note a,
+    .agenda-empty,.agenda-empty p,.table-subtitle,.data-table th,
+    .back-link,.field-help,.field-error,.errorlist,.form-hint,.notice,
+    .detail-meta,.detail-summary dt,.detail-summary dd small,
+    .finance-stats .stat-bottom small,.status-breakdown h3,
+    .status-breakdown p,.sidebar-note p,.sidebar-note a {
+        font-size:14px
+    }
+    .nav-links a,.field label,.field legend,.notes-panel p,
+    .login-intro,.empty-state p,.confirm-panel p {
+        font-size:15px
+    }
+    .panel-heading h2,.notes-panel h2,.quick-note h3,
+    .agenda-item-info>strong,.agenda-empty strong,
+    .data-table,.detail-section .data-table,.table-title {
+        font-size:16px
+    }
+    .month-heading h2 {
+        font-size:20px
+    }
+    .eyebrow,.nav-label,.section-caption,.stat-bottom>span,
+    .calendar-table th,.calendar-legend,.calendar-legend .calendar-timezone,
+    .status,.agenda-item .status,.profile strong,.profile small,
+    .workspace-switch small,.sidebar-note strong,.page-footer,
+    .login-footnote,small,.small {
+        font-size:12px
+    }
+    .count,.today-label,.date-tile>span {
+        font-size:11px
+    }
+    .sidebar-version {
+        font-size:9px;
+        flex-wrap:wrap;
+        gap:4px
+    }
+    .stat-bottom {
+        flex-wrap:wrap;
+        row-gap:2px
+    }
+    .stat-bottom>strong {
+        font-size:40px
+    }
+    .finance-stats .stat-bottom>strong,.detail-summary dd {
+        font-size:30px
+    }
+    .day-number {
+        width:28px;
+        height:28px;
+        font-size:14px;
+        flex-shrink:0
+    }
+    .calendar-event {
+        padding:6px 7px;
+        gap:6px
+    }
+    .event-dot {
+        width:4px;
+        height:4px
+    }
+    .filter-bar>select,.filter-bar>.button {
+        height:44px
+    }
+    .search-field input {
+        padding:10px 0
+    }
+    .date-tile {
+        width:62px
+    }
+    .date-tile strong {
+        font-size:24px
+    }
+    .icon-button {
+        width:36px;
+        height:36px
     }
 }
 @media(prefers-reduced-motion:reduce) {
